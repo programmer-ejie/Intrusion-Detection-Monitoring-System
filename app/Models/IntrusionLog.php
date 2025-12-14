@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class IntrusionLog extends Model
 {
+    public $timestamps = true;
+
     protected $fillable = [
         'src_ip','dst_ip','src_port','dst_port','protocol',
         'flow_duration','flow_pkts_s','flow_bytes_s',
