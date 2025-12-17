@@ -773,7 +773,11 @@
 
     async function fetchData() {
         try {
-            const res = await fetch('/dashboard/refresh');
+            // Get the current window parameter from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const windowParam = urlParams.get('window') || 'all';
+            
+            const res = await fetch(`/dashboard/refresh?window=${windowParam}`);
             if (!res.ok) {
                 console.error('refresh endpoint returned', res.status);
                 return;
