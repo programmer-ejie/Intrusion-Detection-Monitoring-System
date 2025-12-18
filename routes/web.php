@@ -25,6 +25,15 @@ Route::get('/logs', [LogController::class, 'gotoLogs'])
 Route::get('/system-status', [\App\Http\Controllers\SystemStatusController::class, 'gotoStatus'])
     ->name('admin.system-status');
 Route::get('/system-status/alert', [SystemStatusController::class, 'alertFragment'])->name('admin.system-status.alert');
+Route::get('/live', [\App\Http\Controllers\LiveMonitorController::class, 'gotoLive'])->name('admin.live');
+
+// Threat Reports
+Route::get('/threat-reports', [\App\Http\Controllers\ThreatReportsController::class, 'index'])
+    ->name('admin.threat-reports');
+Route::get('/threat-reports/export', [\App\Http\Controllers\ThreatReportsController::class, 'export'])
+    ->name('admin.threat-reports.export');
+Route::get('/threat-reports/data', [\App\Http\Controllers\ThreatReportsController::class, 'data'])
+    ->name('admin.threat-reports.data');
 
 
 

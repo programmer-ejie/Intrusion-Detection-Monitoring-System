@@ -27,6 +27,9 @@
       rel="stylesheet"
     />
 
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="{{ asset('admin/assets/vendor/fonts/boxicons.css') }}" />
 
     <link rel="stylesheet" href="{{ asset('admin/assets/vendor/css/core.css') }}" class="template-customizer-core-css" />
@@ -39,6 +42,24 @@
     <script src="{{ asset('admin/assets/vendor/js/helpers.js') }}"></script>
 
     <script src="{{ asset('admin/assets/js/config.js') }}"></script>
+    <style>
+      /* Local Cooper font for brand (fallback to Public Sans) */
+      @font-face {
+        font-family: 'Cooper';
+        src: url('/fonts/Cooper.woff2') format('woff2'),
+             url('/fonts/Cooper.woff') format('woff');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+      }
+      .cooper-brand {
+        font-family: 'Cooper', 'Public Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif !important;
+        font-weight: 900 !important;
+        font-size: 1.6rem !important;
+        letter-spacing: 1px !important;
+        display: inline-block;
+      }
+    </style>
   </head>
 
   <body>
@@ -47,12 +68,11 @@
 
         <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
           <div class="app-brand demo">
-            <a href="index.html" class="app-brand-link">
+            <a href="{{ route('admin.dashboard') }}" class="app-brand-link">
               <span class="app-brand-logo demo">
-                 <img src="{{ asset('images/logo.png') }}" alt="logo" width="60px" height="50px"/>
+                <img src="{{ asset('images/logo.png') }}" alt="logo" width="60" height="50" />
               </span>
-             <span class="app-brand-text demo menu-text fw-bolder text-uppercase" style = "color: rgb(88, 103, 143)">IDSMS</span>
-
+              <span class="app-brand-text demo menu-text fw-bolder text-uppercase cooper-brand" style="color: rgb(88, 103, 143)">IDSMS</span>
             </a>
 
             <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
@@ -63,41 +83,47 @@
           <div class="menu-inner-shadow"></div>
 
           <ul class="menu-inner py-1">
-        
-             <li class="menu-header small text-uppercase">
+            <li class="menu-header small text-uppercase">
               <span class="menu-header-text">HOME</span>
             </li>
 
             <li class="menu-item">
               <a href="{{route('admin.dashboard')}}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home-circle"></i>
-                <div data-i18n="Analytics">Dashboard</div>
+                <div data-i18n="Analytics" class="fw-semibold">Dashboard</div>
               </a>
             </li>
 
-            
-              <li class="menu-header small text-uppercase">
+            <li class="menu-header small text-uppercase">
               <span class="menu-header-text">FUNCTIONS</span>
             </li>
 
             <li class="menu-item">
               <a href="{{route('admin.logs')}}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-data"></i>
-                <div data-i18n="Analytics">Network Logs</div>
+                <div data-i18n="Analytics" class="fw-semibold">Network Logs</div>
               </a>
             </li>
 
             <li class="menu-item active">
               <a href="{{route('admin.system-status')}}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-server"></i>
-                <div data-i18n="Analytics">System Status</div>
+                <div data-i18n="Analytics" class="fw-semibold">System Status</div>
               </a>
             </li>
 
+            <li class="menu-item">
+              <a href="{{route('admin.threat-reports')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-shield-quarter"></i>
+                <div data-i18n="Analytics" class="fw-semibold">Threat Reports</div>
+              </a>
             </li>
 
-        
-              </ul>
+            <li class="menu-item">
+              <a href="{{route('admin.live')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-tv"></i>
+                <div data-i18n="Analytics" class="fw-semibold">Live Monitor</div>
+              </a>
             </li>
           </ul>
         </aside>
@@ -126,7 +152,7 @@
                       aria-haspopup="true"
                       aria-expanded="false"
                     >
-                      Filter by Time Window
+                      Filter by Time
                     </button>
                     <div class="dropdown-menu dropdown-menu-start" aria-labelledby="navActionDropdown">
                       <a class="dropdown-item" href="{{ url()->current() }}?window=all">All Time</a>
