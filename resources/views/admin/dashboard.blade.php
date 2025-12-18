@@ -87,6 +87,13 @@
               </a>
             </li>
 
+            <li class="menu-item">
+              <a href="{{route('admin.system-status')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-server"></i>
+                <div data-i18n="Analytics">System Status</div>
+              </a>
+            </li>
+
             </li>
 
         
@@ -148,7 +155,7 @@
                             </div>
                           </div>
                           <div class="flex-grow-1">
-                            <span class="fw-semibold d-block">Administrator</span>
+                            <span class="fw-semibold d-block">{{ session('user')->name ?? session('user')->fullname ?? 'Administrator' }}</span>
                             <small class="text-muted">Network Manager</small>
                           </div>
                         </div>

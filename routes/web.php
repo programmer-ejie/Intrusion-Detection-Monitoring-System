@@ -22,6 +22,10 @@ Route::get('/dashboard/refresh', [DashboardController::class, 'refreshData']);
 Route::get('/logs', [LogController::class, 'gotoLogs'])
     ->name('admin.logs');
 
+Route::get('/system-status', [\App\Http\Controllers\SystemStatusController::class, 'gotoStatus'])
+    ->name('admin.system-status');
+Route::get('/system-status/alert', [SystemStatusController::class, 'alertFragment'])->name('admin.system-status.alert');
+
 
 
 

@@ -46,4 +46,14 @@ class UsersAccount extends Model
     protected $casts = [
         'age' => 'integer',
     ];
+
+    /**
+     * Accessor for `name` so views can use `$user->name`.
+     * Maps to the `fullname` column when available.
+     */
+    public function getNameAttribute()
+    {
+        return $this->attributes['fullname'] ?? ($this->attributes['name'] ?? null);
+    }
+
 }
