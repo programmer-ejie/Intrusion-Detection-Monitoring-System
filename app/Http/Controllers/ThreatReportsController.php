@@ -11,7 +11,7 @@ class ThreatReportsController extends Controller
 {
     public function index(Request $request)
     {
-        $window = $request->query('window', '24h');
+        $window = $request->query('window', 'all');
 
         // apply basic time window filter
         $query = IntrusionLog::query();
@@ -51,7 +51,7 @@ class ThreatReportsController extends Controller
     public function data(Request $request)
     {
         $q = $request->query('q', '');
-        $window = $request->query('window', '24h');
+        $window = $request->query('window', 'all');
 
         $query = IntrusionLog::query();
         switch ($window) {

@@ -24,16 +24,20 @@ class LoginController extends Controller
 
         // Check if user exists and password is correct
         if ($user && \Hash::check($credentials['password'], $user->password)) {
+            // Regenerate session ID for security
+            $request->session()->regenerate();
+            
             // Store user in session
             session(['user' => $user]);
             session(['user_id' => $user->id]);
+            session(['login_time' => now()]);
             
             // Redirect to dashboard
             return redirect()->route('admin.dashboard');
         }
 
         // Login failed - redirect back with error
-        return redirect()->route('logout')->with('error', 'Invalid email or password');
+        return redirect()->route('login')->with('error', 'Invalid email or password');
     }
 
     /**
@@ -41,7 +45,17 @@ class LoginController extends Controller
      */
     public function logout(Request $request)
     {
+        // Clear all session data
         session()->flush();
-        return redirect()->route('logout');
+        
+        // Invalidate session
+        $request->session()->invalidate();
+        
+        // Regenerate CSRF token
+        $request->session()->regenerateToken();
+        
+        // Redirect to login page with success message
+        return redirect()->route('login')->with('success', 'You have been logged out successfully.');
     }
 }
+

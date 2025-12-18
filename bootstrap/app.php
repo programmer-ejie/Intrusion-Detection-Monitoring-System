@@ -12,7 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Register custom middleware alias
+        $middleware->alias([
+            'check.session' => \App\Http\Middleware\CheckSession::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

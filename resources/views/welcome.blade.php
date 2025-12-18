@@ -10,22 +10,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet">
-    <!-- End Google Font-->
     
-    <!-- ======= Styles =======-->
     <link href="{{ asset('landing/assets/vendors/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('landing/assets/vendors/bootstrap-icons/font/bootstrap-icons.min.css') }}" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link href="{{ asset('landing/assets/vendors/glightbox/glightbox.min.css') }}" rel="stylesheet">
     <link href="{{ asset('landing/assets/vendors/swiper/swiper-bundle.min.css') }}" rel="stylesheet">
     <link href="{{ asset('landing/assets/vendors/aos/aos.css') }}" rel="stylesheet">
-    <!-- End Styles-->
     
-    <!-- ======= Theme Style =======-->
     <link href="{{ asset('landing/assets/css/style.css') }}" rel="stylesheet">
-    <!-- End Theme Style-->
     
-    <!-- ======= Apply theme =======-->
     <script>
       // Apply the theme as early as possible to avoid flicker
       (function() {
@@ -37,21 +31,14 @@
   <body>
     
     
-    <!-- ======= Site Wrap =======-->
     <div class="site-wrap">
       
       
-      <!-- ======= Header =======-->
-      <header class="fbs__net-navbar navbar navbar-expand-lg dark" aria-label="freebootstrap.net navbar">
+      <header class="fbs__net-navbar navbar navbar-expand-lg dark" aria-label="freebootstrap.net navbar" style="position: sticky; top: 0; z-index: 1000; display: flex !important; visibility: visible !important; opacity: 1 !important; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
         <div class="container d-flex align-items-center justify-content-between">
           
           
-          <!-- Start Logo-->
           <a class="navbar-brand w-auto" href="index.html">
-            <!-- If you use a text logo, uncomment this if it is commented-->
-            <!-- Vertex--> 
-            
-            <!-- If you plan to use an image logo, uncomment this if it is commented-->
             
            <a href="#" class="app-brand-link" style="text-decoration: none; border: none; display: flex; align-items: center; gap: 8px;">
               <span class="app-brand-logo demo">
@@ -59,11 +46,7 @@
               </span>
               <span class="app-brand-text demo menu-text fw-bolder text-uppercase" style="color: rgb(88, 103, 143); text-decoration: none; font-size: 1.4rem; vertical-align: middle; border: none;">IDSMS</span>
             </a>
-            
-            </a>
-          <!-- End Logo-->
           
-          <!-- Start offcanvas-->
           <div class="offcanvas offcanvas-start w-75" id="fbs__net-navbars" tabindex="-1" aria-labelledby="fbs__net-navbarsLabel">
             
             
@@ -94,7 +77,6 @@
               
             </div>
           </div>
-          <!-- End offcanvas-->
           
           <div class="ms-auto w-auto">
             
@@ -118,13 +100,10 @@
           </div>
         </div>
       </header>
-      <!-- End Header-->
       
-      <!-- ======= Main =======-->
       <main>
         
         
-        <!-- ======= Hero =======-->
         <section class="hero__v6 section" id="home">
           <div class="container">
             <div class="row">
@@ -147,11 +126,8 @@
               </div>
             </div>
           </div>
-          <!-- End Hero-->
         </section>
-        <!-- End Hero-->
         
-        <!-- ======= About =======-->
         <section class="about__v4 section" id="about" style = "margin-top: -180px;">
           <div class="container">
             <div class="row">
@@ -188,10 +164,8 @@
             </div>
           </div>
         </section>
-        <!-- End About-->
     
         
-        <!-- ======= How it works =======-->
         <section class="section howitworks__v1" id="how-it-works">
           <div class="container">
             <div class="row mb-5">
@@ -235,9 +209,7 @@
             </div>
           </div>
         </section>
-        <!-- End How it works-->
         
-        <!-- ======= Services =======-->
         <section class="section services__v3" id="services">
           <div class="container">
             <div class="row mb-5">
@@ -334,7 +306,6 @@
             </div>
           </div>
         </section>
-        <!-- Services-->
 
         <section id="login" style="padding: 70px 20px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center;">
            <div style="width: 100%; max-width: 70vw; padding: 0 20px;" data-aos="fade-up" data-aos-delay="0">
@@ -480,11 +451,8 @@
       </main>
     </div>
     
-    <!-- ======= Back to Top =======-->
     <button id="back-to-top"><i class="bi bi-arrow-up-short"></i></button>
-    <!-- End Back to top-->
     
-    <!-- ======= Javascripts =======-->
     <script src="{{ asset('landing/assets/vendors/bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('landing/assets/vendors/gsap/gsap.min.js') }}"></script>
     <script src="{{ asset('landing/assets/vendors/imagesloaded/imagesloaded.pkgd.min.js') }}"></script>
@@ -495,8 +463,6 @@
     <script src="{{ asset('landing/assets/vendors/purecounter/purecounter.js') }}"></script>
     <script src="{{ asset('landing/assets/js/custom.js') }}"></script>
     <script src="{{ asset('landing/assets/js/send_email.js') }}"></script>
-    
-    <!-- Password visibility toggle -->
     <script>
       document.addEventListener('DOMContentLoaded', function() {
         const toggles = document.querySelectorAll('.input-group-text.cursor-pointer');
@@ -570,6 +536,5 @@
         showErrorModal('{{ session('error') }}');
       @endif
     </script>
-    <!-- End JavaScripts-->
   </body>
 </html>

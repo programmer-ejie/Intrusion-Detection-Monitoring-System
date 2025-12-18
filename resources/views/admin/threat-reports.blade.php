@@ -172,7 +172,7 @@
                         <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.threat-reports') }}?window=24h">Last 24h</a>
                         <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.threat-reports') }}?window=7d">7 Days</a>
                         <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.threat-reports') }}?window=30d">30 Days</a>
-                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('admin.threat-reports') }}?window=all">All</a>
+                        <a class="btn btn-sm btn-primary" href="{{ route('admin.threat-reports') }}?window=all">All</a>
                         <a class="btn btn-sm btn-success" href="{{ route('admin.threat-reports.export', request()->query()) }}">Export CSV</a>
                       </div>
                     </div>
