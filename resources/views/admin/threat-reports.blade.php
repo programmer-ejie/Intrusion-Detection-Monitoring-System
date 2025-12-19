@@ -91,6 +91,12 @@
                 <div data-i18n="Analytics" class="fw-semibold">System Status</div>
               </a>
             </li>
+             <li class="menu-item">
+              <a href="{{route('admin.manage-threats')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-shield-alt"></i>
+                <div data-i18n="Analytics" class="fw-semibold">Manage Threats</div>
+              </a>
+            </li>
 
             <li class="menu-item active">
               <a href="{{route('admin.threat-reports')}}" class="menu-link">

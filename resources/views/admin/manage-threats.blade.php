@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
-    <title>Intrusion Detection System | Network Logs</title>
+    <title>Intrusion Detection System | Manage Threats</title>
     <meta name="description" content="" />
     <link rel="icon" type="image/x-icon" href="{{ asset('images/logo.png') }}" style="border-radius: 50%;" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -31,6 +31,78 @@
         font-size: 1.6rem !important;
         letter-spacing: 1px !important;
         display: inline-block;
+      }
+      .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .status-blocked {
+        background-color: #fff5f5;
+        color: #d32f2f;
+      }
+      .status-resolved {
+        background-color: #f0f7ff;
+        color: #1976d2;
+      }
+      .status-unresolved {
+        background-color: #fff3e0;
+        color: #f57c00;
+      }
+      @media (max-width: 576px) {
+        .btn-text-hide {
+          font-size: 0;
+          padding: 0.375rem 0.5rem;
+        }
+        .btn-text-hide i {
+          font-size: 1rem;
+          margin: 0;
+        }
+        .modal-header .modal-title {
+          font-size: 1.1rem;
+        }
+        .modal-body {
+          font-size: 0.9rem;
+        }
+        .modal-footer {
+          font-size: 0.85rem;
+        }
+      }
+      .modal-body {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        word-break: break-word;
+        white-space: normal;
+      }
+
+      /* Ensure modal fits content on small screens and prevents overlap */
+      @media (max-width: 576px) {
+        .modal-dialog { max-width: 95% !important; margin: 1.75rem auto; }
+        .modal-content { overflow: visible; }
+        .modal-header, .modal-footer { flex-wrap: wrap; gap: 0.5rem; }
+        .modal-footer .btn { flex: 1 1 auto; min-width: 80px; }
+        .modal-body p { margin-bottom: 0.5rem; }
+      }
+
+      /* Center columns for Risk Level, Status, and Actions */
+      td:nth-child(7), th:nth-child(7) {
+        text-align: center;
+      }
+      
+      td:nth-child(8), th:nth-child(8) {
+        text-align: center;
+      }
+      
+      td:last-child, th:last-child {
+        text-align: center;
+      }
+
+      /* Hide Actions column and header when blocked status is selected */
+      .status-blocked-filter td:last-child,
+      .status-blocked-filter th:last-child {
+        display: none;
       }
     </style>
   </head>
@@ -63,35 +135,35 @@
             <li class="menu-header small text-uppercase">
               <span class="menu-header-text">FUNCTIONS</span>
             </li>
-            <li class="menu-item active">
+            <li class="menu-item">
               <a href="{{ route('admin.logs') }}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-data"></i>
                 <div data-i18n="Analytics" class="fw-semibold">Network Logs</div>
               </a>
             </li>
 
-              <li class="menu-item">
+            <li class="menu-item">
               <a href="{{route('admin.system-status')}}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-server"></i>
                 <div data-i18n="Analytics" class="fw-semibold">System Status</div>
               </a>
             </li>
 
-              <li class="menu-item">
-                <a href="{{route('admin.manage-threats')}}" class="menu-link">
-                  <i class="menu-icon tf-icons bx bx-shield-alt"></i>
-                  <div data-i18n="Analytics" class="fw-semibold">Manage Threats</div>
-                </a>
-              </li>
+            <li class="menu-item active">
+              <a href="{{route('admin.manage-threats')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-shield-alt"></i>
+                <div data-i18n="Analytics" class="fw-semibold">Manage Threats</div>
+              </a>
+            </li>
 
-              <li class="menu-item">
-                <a href="{{route('admin.threat-reports')}}" class="menu-link">
-                  <i class="menu-icon tf-icons bx bx-shield-quarter"></i>
-                  <div data-i18n="Analytics" class="fw-semibold">Threat Reports</div>
-                </a>
-              </li>
+            <li class="menu-item">
+              <a href="{{route('admin.threat-reports')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-shield-quarter"></i>
+                <div data-i18n="Analytics" class="fw-semibold">Threat Reports</div>
+              </a>
+            </li>
 
-              <li class="menu-item">
+            <li class="menu-item">
               <a href="{{route('admin.live')}}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-tv"></i>
                 <div data-i18n="Analytics" class="fw-semibold">Live Monitor</div>
@@ -153,35 +225,43 @@
           </nav>
           <div class="content-wrapper">
             <div class="container-xxl flex-grow-1 container-p-y" style="padding-top: 0;">
+              @if($message = session('success'))
+              <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ $message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+              @endif
+
+              @if($message = session('error'))
+              <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ $message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+              @endif
+
               <div class="card">
                 <div class="card-body">
-                  <form id="logs-filter-form" method="GET" action="{{ route('admin.logs') }}" class="row g-3 align-items-end">
+                  <form id="threats-filter-form" method="GET" action="{{ route('admin.manage-threats') }}" class="row g-3 align-items-end">
                     <div class="col-md-3">
                       <label for="date" class="form-label small">Date</label>
                       <input type="date" id="date" name="date" value="{{ request('date') }}" class="form-control" />
                     </div>
                     <div class="col-md-3">
-                      <label for="type" class="form-label small">Type</label>
-                      <select id="type" name="type" class="form-select">
-                        <option value="" {{ request('type') == '' ? 'selected' : '' }}>All</option>
-                        <option value="normal" {{ in_array(request('type'), ['normal','benign'], true) ? 'selected' : '' }}>Normal</option>
-                        <option value="attack" {{ request('type') == 'attack' ? 'selected' : '' }}>Attack</option>
+                      <label for="status" class="form-label small">Status</label>
+                      <select id="status" name="status" class="form-select">
+                        <option value="unresolved" {{ request('status') == 'unresolved' ? 'selected' : '' }}>Unresolved</option>
+                        <option value="blocked" {{ request('status') == 'blocked' ? 'selected' : '' }}>Blocked</option>
                       </select>
                     </div>
-                    {{-- <div class="col-md-4">
-                      <label for="q" class="form-label small">Search</label>
-                      <input type="text" id="q" name="q" value="{{ request('q') }}" class="form-control" placeholder="src/dst/protocol/notes..." />
-                    </div> --}}
-                  <div class="col-md-2 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">Filter</button>
-                        <a href="{{ route('admin.logs') }}" class="btn btn-outline-secondary">Reset</a>
-                        </div>
+                    <div class="col-md-2 d-flex gap-2">
+                      <button type="submit" class="btn btn-primary">Filter</button>
+                      <a href="{{ route('admin.manage-threats') }}" class="btn btn-outline-secondary">Reset</a>
+                    </div>
                   </form>
-             
                 </div>
-                <div class="card-header" style = "font-weight: bolder;">Network Logs</div>
+                <div class="card-header" style="font-weight: bolder;">Active Threats</div>
                 <div class="table-responsive text-nowrap">
-                  <table class="table table-striped">
+                  <table class="table table-striped {{ request('status') == 'blocked' ? 'status-blocked-filter' : '' }}">
                     <thead>
                       <tr>
                         <th>#</th>
@@ -190,57 +270,103 @@
                         <th>Dst IP</th>
                         <th>Protocol</th>
                         <th>Type</th>
+                        <th>Risk Level</th>
+                        <th>Status</th>
                         @if($hasNotes)
                         <th>Notes</th>
                         @endif
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
-                      @forelse($logs as $log)
+                      @forelse($threats as $threat)
                       @php
-                        $displayType = 'Normal';
-                        $isAttack = false;
+                        $displayType = 'Threat';
                         if ($typeColumn) {
                           if ($typeColumn === 'is_malicious') {
-                            $isAttack = (bool) ($log->{$typeColumn});
-                            $displayType = $isAttack ? 'Attack' : 'Normal';
+                            $displayType = 'Attack';
                           } else {
-                            $val = strtolower((string) ($log->{$typeColumn} ?? ''));
-                            if ($val === 'benign' || $val === 'normal' || $val === '') {
-                              $displayType = 'Normal';
-                              $isAttack = false;
-                            } else {
-                              $displayType = ucfirst($val);
-                              $isAttack = true;
-                            }
+                            $val = strtolower((string) ($threat->{$typeColumn} ?? ''));
+                            $displayType = !empty($val) ? ucfirst($val) : 'Threat';
                           }
-                        } else {
-                          $displayType = 'Normal';
-                          $isAttack = false;
                         }
-                        $typeClass = $isAttack ? 'text-danger' : 'text-success';
+                        
+                        $statusBadgeClass = 'status-unresolved';
+                        $statusText = 'Unresolved';
+                        if ($threat->status === 'blocked') {
+                          $statusBadgeClass = 'status-blocked';
+                          $statusText = 'Blocked';
+                        } elseif ($threat->status === 'resolved') {
+                          $statusBadgeClass = 'status-resolved';
+                          $statusText = 'Resolved';
+                        }
                       @endphp
                       <tr>
-                        <td>{{ $log->id }}</td>
-                        <td>{{ optional($log->created_at)->toDateTimeString() ?? '-' }}</td>
-                        <td>{{ $log->src_ip ?? '-' }}</td>
-                        <td>{{ $log->dst_ip ?? '-' }}</td>
-                        <td>{{ $log->protocol ?? '-' }}</td>
-                        <td class="{{ $typeClass }}">{{ $displayType }}</td>
+                        <td>{{ $threat->id }}</td>
+                        <td>{{ optional($threat->created_at)->toDateTimeString() ?? '-' }}</td>
+                        <td><strong>{{ $threat->src_ip ?? '-' }}</strong></td>
+                        <td>{{ $threat->dst_ip ?? '-' }}</td>
+                        <td>{{ $threat->protocol ?? '-' }}</td>
+                        <td class="text-danger">{{ $displayType }}</td>
+                        <td>
+                          <span class="badge bg-danger">{{ $threat->risk_level ?? 'Unknown' }}</span>
+                        </td>
+                        <td>
+                          <span class="status-badge {{ $statusBadgeClass }}">{{ $statusText }}</span>
+                        </td>
                         @if($hasNotes)
-                        <td>{{ $log->notes ?? '-' }}</td>
+                        <td>{{ $threat->notes ?? '-' }}</td>
                         @endif
+                        <td>
+                          @if($threat->status !== 'blocked' && $threat->status !== 'resolved')
+                          <div class="d-flex">
+                            <button type="button" class="btn btn-sm btn-danger ms-auto" data-bs-toggle="modal" data-bs-target="#blockModal{{ $threat->id }}">
+                              <i class="bx bx-block"></i>
+                              <span class="d-none d-sm-inline"> Block</span>
+                            </button>
+                          </div>
+
+                          <!-- Block Modal -->
+                          <div class="modal fade" id="blockModal{{ $threat->id }}" tabindex="-1" aria-labelledby="blockModalLabel{{ $threat->id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title" id="blockModalLabel{{ $threat->id }}">Block IP Address</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-start">
+                                  <p>Are you sure you want to <strong>block</strong> IP address <strong class="text-danger">{{ $threat->src_ip }}</strong>?</p>
+                                  <p class="text-muted mb-0">This will mark all threats from this IP as blocked.</p>
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="button" class="btn btn-danger btn-sm btn-text-hide" data-bs-dismiss="modal">
+                                    <i class="bx bx-x"></i><span class="d-none d-sm-inline"> Cancel</span>
+                                  </button>
+                                  <form method="POST" action="{{ route('admin.threat.block', $threat->id) }}" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success btn-sm btn-text-hide">
+                                      <i class="bx bx-check"></i><span class="d-none d-sm-inline"> Block IP</span>
+                                    </button>
+                                  </form>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          @else
+                          <span class="text-muted">-</span>
+                          @endif
+                        </td>
                       </tr>
                       @empty
                       <tr>
-                        <td colspan="{{ $hasNotes ? 7 : 6 }}" class="text-center text-muted">No logs found</td>
+                        <td colspan="{{ $hasNotes ? 10 : 9 }}" class="text-center text-muted">No threats found</td>
                       </tr>
                       @endforelse
                     </tbody>
                   </table>
                 </div>
                 <div class="card-footer d-flex justify-content-center">
-                  {{ $logs->links('pagination::bootstrap-5') }}
+                  {{ $threats->links('pagination::bootstrap-5') }}
                 </div>
               </div>
             </div>
@@ -289,29 +415,5 @@
     <script src="{{ asset('admin/assets/vendor/js/menu.js') }}"></script>
     <script src="{{ asset('admin/assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
     <script src="{{ asset('admin/assets/js/main.js') }}"></script>
-    <script>
-      (function () {
-        var navbarSearch = document.getElementById('navbar-search');
-        var qInput = document.getElementById('q');
-        var dateInput = document.getElementById('date');
-        var typeInput = document.getElementById('type');
-        if (navbarSearch && qInput) {
-          navbarSearch.value = qInput.value || '';
-          qInput.addEventListener('input', function () { navbarSearch.value = qInput.value; });
-          navbarSearch.addEventListener('input', function () { qInput.value = navbarSearch.value; });
-          navbarSearch.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              var params = new URLSearchParams(window.location.search);
-              if (navbarSearch.value) params.set('q', navbarSearch.value); else params.delete('q');
-              if (dateInput && dateInput.value) params.set('date', dateInput.value); else params.delete('date');
-              if (typeInput && typeInput.value) params.set('type', typeInput.value); else params.delete('type');
-              window.location.pathname = "{{ route('admin.logs') }}";
-              window.location.search = params.toString();
-            }
-          });
-        }
-      })();
-    </script>
   </body>
 </html>

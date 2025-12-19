@@ -30,13 +30,14 @@ class ThreatReportsController extends Controller
                 break;
         }
 
-        $total = (clone $query)->count();
-        $attacks = (clone $query)->where('risk_level', '>=', 3)->count();
-        $highRisk = (clone $query)->where('risk_level', '>=', 4)->count();
+        // Exclude blocked logs from threat report counts
+        $total = (clone $query)->whereNull('status')->count();
+        $attacks = (clone $query)->whereNull('status')->where('risk_level', '>=', 3)->count();
+        $highRisk = (clone $query)->whereNull('status')->where('risk_level', '>=', 4)->count();
 
-        $latest = (clone $query)->orderByDesc('created_at')->first();
+        $latest = (clone $query)->whereNull('status')->orderByDesc('created_at')->first();
 
-        $rows = (clone $query)->orderByDesc('created_at')->limit(50)->get();
+        $rows = (clone $query)->whereNull('status')->orderByDesc('created_at')->limit(50)->get();
 
         return view('admin.threat-reports', [
             'window' => $window,
@@ -78,7 +79,7 @@ class ThreatReportsController extends Controller
             });
         }
 
-        $rows = $query->orderByDesc('created_at')->limit(200)->get([
+        $rows = $query->whereNull('status')->orderByDesc('created_at')->limit(200)->get([
             'created_at','src_ip','dst_ip','risk_level','prob_attack','tot_fwd_pkts','flow_bytes_s'
         ]);
 

@@ -16,7 +16,9 @@ class DashboardController extends Controller
         $startDate = $dateRange['start'];
         $endDate = $dateRange['end'];
 
+        // Exclude blocked logs from dashboard counts
         $logs = IntrusionLog::whereBetween('created_at', [$startDate, $endDate])
+            ->whereNull('status')
             ->latest()
             ->get();
 
@@ -110,11 +112,12 @@ class DashboardController extends Controller
                 $hourStart = $startDate->copy()->addHours($i);
                 $hourEnd = $hourStart->copy()->addHour();
                 $labels[] = $hourStart->format('H:00');
-                $benignSeries[] = IntrusionLog::whereBetween('created_at', [$hourStart, $hourEnd])->where('risk_level', 'benign')->count();
-                $attackSeries[] = IntrusionLog::whereBetween('created_at', [$hourStart, $hourEnd])->where('risk_level', 'attack')->count();
+                $benignSeries[] = IntrusionLog::whereBetween('created_at', [$hourStart, $hourEnd])->whereNull('status')->where('risk_level', 'benign')->count();
+                $attackSeries[] = IntrusionLog::whereBetween('created_at', [$hourStart, $hourEnd])->whereNull('status')->where('risk_level', 'attack')->count();
             }
         } elseif ($window === 'all') {
             $rows = IntrusionLog::whereBetween('created_at', [$startDate, $endDate])
+                ->whereNull('status')
                 ->selectRaw("DATE(created_at) as date, SUM(case when risk_level = 'benign' then 1 else 0 end) as benign, SUM(case when risk_level = 'attack' then 1 else 0 end) as attacks")
                 ->groupBy('date')
                 ->orderBy('date')
@@ -130,8 +133,8 @@ class DashboardController extends Controller
                 $dayStart = $startDate->copy()->startOfDay()->addDays($i);
                 $dayEnd = $dayStart->copy()->endOfDay();
                 $labels[] = $dayStart->format('M d');
-                $benignSeries[] = IntrusionLog::whereBetween('created_at', [$dayStart, $dayEnd])->where('risk_level', 'benign')->count();
-                $attackSeries[] = IntrusionLog::whereBetween('created_at', [$dayStart, $dayEnd])->where('risk_level', 'attack')->count();
+                $benignSeries[] = IntrusionLog::whereBetween('created_at', [$dayStart, $dayEnd])->whereNull('status')->where('risk_level', 'benign')->count();
+                $attackSeries[] = IntrusionLog::whereBetween('created_at', [$dayStart, $dayEnd])->whereNull('status')->where('risk_level', 'attack')->count();
             }
         }
 
@@ -145,6 +148,7 @@ class DashboardController extends Controller
     private function getAttacksByType($startDate, $endDate)
     {
         $attacks = IntrusionLog::whereBetween('created_at', [$startDate, $endDate])
+            ->whereNull('status')
             ->where('risk_level', 'attack')
             ->groupBy('attack_type')
             ->selectRaw('attack_type, count(*) as count')
@@ -165,6 +169,7 @@ class DashboardController extends Controller
     private function getTopAttackedIPs($startDate, $endDate)
     {
         $ips = IntrusionLog::whereBetween('created_at', [$startDate, $endDate])
+            ->whereNull('status')
             ->where('risk_level', 'attack')
             ->groupBy('dst_ip')
             ->selectRaw('dst_ip, count(*) as count')
@@ -178,6 +183,7 @@ class DashboardController extends Controller
     private function getRiskLevelDistribution($startDate, $endDate)
     {
         $distribution = IntrusionLog::whereBetween('created_at', [$startDate, $endDate])
+            ->whereNull('status')
             ->groupBy('risk_level')
             ->selectRaw('risk_level, count(*) as count')
             ->get();
@@ -200,7 +206,9 @@ class DashboardController extends Controller
         $startDate = $dateRange['start'];
         $endDate = $dateRange['end'];
 
+        // Exclude blocked logs from refreshed counts
         $logs = IntrusionLog::whereBetween('created_at', [$startDate, $endDate])
+            ->whereNull('status')
             ->latest()
             ->get();
 

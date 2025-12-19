@@ -7,6 +7,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\SystemStatusController;
 use App\Http\Controllers\LiveMonitorController;
 use App\Http\Controllers\ThreatReportsController;
+use App\Http\Controllers\ManageThreatController;
 
 
 Route::get('/', function () {
@@ -47,6 +48,15 @@ Route::middleware('check.session')->group(function () {
         ->name('admin.threat-reports.export');
     Route::get('/threat-reports/data', [ThreatReportsController::class, 'data'])
         ->name('admin.threat-reports.data');
+
+    Route::get('/manage-threats', [ManageThreatController::class, 'index'])
+        ->name('admin.manage-threats');
+    Route::post('/threats/{id}/block', [ManageThreatController::class, 'block'])
+        ->name('admin.threat.block');
+    Route::post('/threats/{id}/ignore', [ManageThreatController::class, 'ignore'])
+        ->name('admin.threat.ignore');
+    Route::post('/threats/bulk-action', [ManageThreatController::class, 'bulkAction'])
+        ->name('admin.threat.bulk-action');
 });
 
 

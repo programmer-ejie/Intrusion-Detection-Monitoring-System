@@ -62,27 +62,28 @@ class SystemStatusController extends Controller
                 break;
         }
 
-        $baseQuery = IntrusionLog::query();
+        $baseQuery = IntrusionLog::query()->whereNull('status');
         if ($startWindow) {
             $baseQuery = $baseQuery->whereBetween('created_at', [$startWindow, $now]);
         }
 
         $totalLogs = (clone $baseQuery)->count();
-        $logsToday = IntrusionLog::whereBetween('created_at', [$startOfDay, $now])->count();
-        $logsThisWeek = IntrusionLog::whereBetween('created_at', [$startOfWeek, $now])->count();
-        $logsThisMonth = IntrusionLog::whereBetween('created_at', [$startOfMonth, $now])->count();
+        $logsToday = IntrusionLog::whereNull('status')->whereBetween('created_at', [$startOfDay, $now])->count();
+        $logsThisWeek = IntrusionLog::whereNull('status')->whereBetween('created_at', [$startOfWeek, $now])->count();
+        $logsThisMonth = IntrusionLog::whereNull('status')->whereBetween('created_at', [$startOfMonth, $now])->count();
 
         // first log for 'all' or startWindow as informational
         $firstLog = null;
         if ($startWindow === null) {
-            $firstLog = IntrusionLog::oldest()->first();
+            // prefer earliest non-blocked log, fall back to any earliest log
+            $firstLog = IntrusionLog::whereNull('status')->oldest()->first() ?? IntrusionLog::oldest()->first();
         }
 
         // compute uptime in days as a float with 2 decimal precision
         // use signed difference so we can detect clock skew (first log in future)
         $systemUptime = null;
         $uptimeWarning = false;
-        $earliest = $firstLog ?? ($startWindow ?: IntrusionLog::oldest()->first());
+        $earliest = $firstLog ?? ($startWindow ?: IntrusionLog::whereNull('status')->oldest()->first() ?? IntrusionLog::oldest()->first());
         if ($earliest) {
             $earliestTs = $earliest->created_at ?? $startWindow;
             $seconds = $now->getTimestamp() - ($earliestTs instanceof Carbon ? $earliestTs->getTimestamp() : $earliestTs->getTimestamp());
@@ -95,16 +96,16 @@ class SystemStatusController extends Controller
             }
         }
 
-        $attacksToday = IntrusionLog::where('risk_level', 'attack')
+        $attacksToday = IntrusionLog::whereNull('status')->where('risk_level', 'attack')
             ->whereBetween('created_at', [$startOfDay, $now])
             ->count();
 
-        $benignToday = IntrusionLog::where('risk_level', 'benign')
+        $benignToday = IntrusionLog::whereNull('status')->where('risk_level', 'benign')
             ->whereBetween('created_at', [$startOfDay, $now])
             ->count();
 
-        $totalAttacks = IntrusionLog::where('risk_level', 'attack')->count();
-        $totalBenign = IntrusionLog::where('risk_level', 'benign')->count();
+        $totalAttacks = IntrusionLog::whereNull('status')->where('risk_level', 'attack')->count();
+        $totalBenign = IntrusionLog::whereNull('status')->where('risk_level', 'benign')->count();
 
         return [
             'total_logs' => $totalLogs,
@@ -118,7 +119,7 @@ class SystemStatusController extends Controller
             'total_attacks' => $totalAttacks,
             'total_benign' => $totalBenign,
             'first_log_date' => $firstLog ? $firstLog->created_at->format('M d, Y H:i') : ($startWindow ? $startWindow->format('M d, Y H:i') : 'N/A'),
-            'last_log_date' => IntrusionLog::latest()->first()?->created_at->format('M d, Y H:i') ?? 'N/A',
+            'last_log_date' => (IntrusionLog::whereNull('status')->latest()->first()?->created_at ?? IntrusionLog::latest()->first()?->created_at)?->format('M d, Y H:i') ?? 'N/A',
         ];
     }
 
@@ -128,14 +129,14 @@ class SystemStatusController extends Controller
         $lastHour = $now->copy()->subHour();
         $lastDay = $now->copy()->subDay();
 
-        $logsLastHour = IntrusionLog::whereBetween('created_at', [$lastHour, $now])->count();
-        $logsLastDay = IntrusionLog::whereBetween('created_at', [$lastDay, $now])->count();
+        $logsLastHour = IntrusionLog::whereNull('status')->whereBetween('created_at', [$lastHour, $now])->count();
+        $logsLastDay = IntrusionLog::whereNull('status')->whereBetween('created_at', [$lastDay, $now])->count();
 
         $avgRate = $logsLastDay > 0 ? round($logsLastDay / 24, 2) : 0;
         $currentRate = $logsLastHour > 0 ? round($logsLastHour, 2) : 0;
 
-        $avgPacketsPerFlow = IntrusionLog::average('tot_fwd_pkts') ?? 0;
-        $avgBytesPerFlow = IntrusionLog::average('flow_bytes_s') ?? 0;
+        $avgPacketsPerFlow = IntrusionLog::whereNull('status')->average('tot_fwd_pkts') ?? 0;
+        $avgBytesPerFlow = IntrusionLog::whereNull('status')->average('flow_bytes_s') ?? 0;
 
         return [
             'logs_last_hour' => $logsLastHour,
@@ -152,14 +153,14 @@ class SystemStatusController extends Controller
         $now = Carbon::now();
         $startOfDay = $now->copy()->startOfDay();
 
-        $totalLogs = IntrusionLog::count();
-        $attackLogs = IntrusionLog::where('risk_level', 'attack')->count();
+        $totalLogs = IntrusionLog::whereNull('status')->count();
+        $attackLogs = IntrusionLog::whereNull('status')->where('risk_level', 'attack')->count();
 
         $attackRate = $totalLogs > 0 ? round(($attackLogs / $totalLogs) * 100, 2) : 0;
-        $criticalAlerts = IntrusionLog::where('prob_attack', '>=', 0.8)->count();
-        $highRiskAlerts = IntrusionLog::whereBetween('prob_attack', [0.5, 0.79])->count();
+        $criticalAlerts = IntrusionLog::whereNull('status')->where('prob_attack', '>=', 0.8)->count();
+        $highRiskAlerts = IntrusionLog::whereNull('status')->whereBetween('prob_attack', [0.5, 0.79])->count();
 
-        $avgProbAttack = round(IntrusionLog::average('prob_attack') ?? 0, 4);
+        $avgProbAttack = round(IntrusionLog::whereNull('status')->average('prob_attack') ?? 0, 4);
 
         // Health status based on metrics
         $status = 'Healthy';
@@ -190,10 +191,10 @@ class SystemStatusController extends Controller
             $hourStart = $now->copy()->subHours($i)->startOfHour();
             $hourEnd = $hourStart->copy()->addHour();
 
-            $count = IntrusionLog::whereBetween('created_at', [$hourStart, $hourEnd])->count();
-            $attacks = IntrusionLog::where('risk_level', 'attack')
-                ->whereBetween('created_at', [$hourStart, $hourEnd])
-                ->count();
+                $count = IntrusionLog::whereNull('status')->whereBetween('created_at', [$hourStart, $hourEnd])->count();
+                $attacks = IntrusionLog::whereNull('status')->where('risk_level', 'attack')
+                    ->whereBetween('created_at', [$hourStart, $hourEnd])
+                    ->count();
 
             $timeline[] = [
                 'time' => $hourStart->format('H:00'),

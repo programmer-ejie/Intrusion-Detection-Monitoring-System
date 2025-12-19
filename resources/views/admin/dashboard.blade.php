@@ -112,6 +112,13 @@
             </li>
 
             <li class="menu-item">
+              <a href="{{route('admin.manage-threats')}}" class="menu-link">
+                <i class="menu-icon tf-icons bx bx-shield-alt"></i>
+                <div data-i18n="Analytics" class="fw-semibold">Manage Threats</div>
+              </a>
+            </li>
+
+            <li class="menu-item">
               <a href="{{route('admin.threat-reports')}}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-shield-quarter"></i>
                 <div data-i18n="Analytics" class="fw-semibold">Threat Reports</div>
@@ -1015,14 +1022,12 @@
                     if (attackListEl) attackListEl.innerHTML = attackListHtml;
                 }
 
-                // Update Risk Level Distribution
                 if (data.riskLevelDistribution) {
                     const rlLabels = data.riskLevelDistribution.labels || [];
                     const rlData = data.riskLevelDistribution.data || [];
                     const rlTotal = rlData.reduce((a, b) => a + b, 0);
                     const rlColors = ['#dc3545', '#28a745', '#ffc107'];
                     
-                    // Update risk level pills
                     const riskPillsHtml = rlLabels.map((level, index) => {
                         const val = rlData[index] || 0;
                         const pct = rlTotal ? Math.round((val / rlTotal) * 100) : 0;
@@ -1038,7 +1043,6 @@
                     const riskPillsEl = document.querySelector('#riskLevelChart').parentElement.querySelector('.d-flex.justify-content-center');
                     if (riskPillsEl) riskPillsEl.innerHTML = riskPillsHtml;
                     
-                    // Update bottom risk level stats
                     let topLabel = 'N/A';
                     if (rlData.length > 0 && rlTotal > 0) {
                         const maxIdx = rlData.indexOf(Math.max(...rlData));

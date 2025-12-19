@@ -11,7 +11,7 @@ class LogController extends Controller
     public function gotoLogs(Request $request)
     {
         $perPage = 3;
-        $query = IntrusionLog::query();
+        $query = IntrusionLog::query()->whereNull('status');
 
         if ($request->filled('date')) {
             $query->whereDate('created_at', $request->input('date'));
