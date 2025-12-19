@@ -433,16 +433,16 @@
                     <div class="col-12 mb-4">
                       <div class="card">
                         <div class="card-body">
-                          <div class="d-flex justify-content-between flex-sm-row flex-column gap-3">
-                            <div class="d-flex flex-sm-column flex-row align-items-start justify-content-between">
+                          <div class="d-flex flex-column flex-sm-row justify-content-between gap-3 align-items-start">
+                            <div class="d-flex flex-column">
                               <div class="card-title">
                                 <h5 class="text-nowrap mb-2">Attack Distribution</h5>
                               </div>
-                              <div class="mt-sm-auto">
-                                <small class="text-danger text-nowrap fw-semibold"><i class="bx bx-alert"></i> {{ $attackCount }} Detected</small>
+                              <div class="mt-2">
+                                <div class="h4 text-danger fw-semibold mb-0"><i class="bx bx-alert me-2"></i> {{ $attackCount }} Detected</div>
                               </div>
                             </div>
-                            <div id="profileReportChart"></div>
+                            <div id="profileReportChart" class="mt-3 mt-sm-0"></div>
                           </div>
                         </div>
                       </div>
@@ -456,7 +456,7 @@
                     <div class="card-header d-flex align-items-center justify-content-between pb-0">
                       <div class="card-title mb-0">
                         <h5 class="m-0 me-2">Attack Types</h5>
-                        <small class="text-muted">Top 5</small>
+                        <small class="text-muted">Top 3</small>
                       </div>
                       <div class="dropdown">
                         <button
@@ -478,21 +478,30 @@
                     </div>
                     <div class="card-body">
                       <div id="attackTypeChart"></div>
-                      <ul class="p-0 m-0">
-                        @foreach($attackByType['labels'] as $index => $type)
-                        <li class="d-flex mb-4 pb-1">
-                          <div class="avatar flex-shrink-0 me-3">
-                            <span class="avatar-initial rounded bg-label-danger">
-                              <i class="bx bx-shield-alt"></i>
-                            </span>
+                      @php
+                        $attackLabels = $attackByType['labels'] ?? [];
+                        $attackData = $attackByType['data'] ?? [];
+                        $attackTotal = array_sum($attackData ?: [0]);
+                        $attackColors = ['#f44336', '#ff9800', '#2196f3', '#9c27b0', '#4caf50'];
+                      @endphp
+                      <ul class="p-0 m-0 small">
+                        @foreach(collect($attackLabels)->take(3)->values() as $i => $type)
+                        @php
+                          $count = $attackData[$i] ?? 0;
+                          $percent = $attackTotal ? round(($count / $attackTotal) * 100, 1) : 0;
+                          $color = $attackColors[$i % count($attackColors)];
+                        @endphp
+                        <li class="mb-2">
+                          <div class="d-flex align-items-center justify-content-between mb-1">
+                            <div class="d-flex align-items-center gap-1">
+                              <span style="width:8px;height:8px;border-radius:2px;background:{{ $color }};display:inline-block;"></span>
+                              <strong class="me-1 small">{{ $type ?? 'Unknown' }}</strong>
+                              <small class="text-muted">{{ $percent }}%</small>
+                            </div>
+                            <span class="badge bg-light text-dark small py-1 px-2">{{ number_format($count) }}</span>
                           </div>
-                          <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
-                            <div class="me-2">
-                              <h6 class="mb-0">{{ $type ?? 'Unknown' }}</h6>
-                            </div>
-                            <div class="user-progress">
-                              <small class="fw-semibold">{{ $attackByType['data'][$index] ?? 0 }}</small>
-                            </div>
+                          <div class="progress" style="height:6px; background:#f1f3f5; border-radius:6px;">
+                            <div class="progress-bar" role="progressbar" style="width:{{ $percent }}%; background:{{ $color }}; border-radius:6px;" aria-valuenow="{{ $percent }}" aria-valuemin="0" aria-valuemax="100"></div>
                           </div>
                         </li>
                         @endforeach
@@ -509,13 +518,61 @@
                     </div>
                     <div class="card-body px-0">
                       <div id="riskLevelChart"></div>
-                      <div class="d-flex justify-content-center pt-4 gap-3">
-                        @foreach($riskLevelDistribution['labels'] as $index => $level)
-                        <div>
-                          <p class="mb-1 text-center text-capitalize">{{ $level }}</p>
-                          <h6 class="text-center">{{ $riskLevelDistribution['data'][$index] ?? 0 }}</h6>
+                      @php
+                        $rlLabels = $riskLevelDistribution['labels'] ?? [];
+                        $rlData = $riskLevelDistribution['data'] ?? [];
+                        $rlTotal = array_sum($rlData ?: [0]);
+                        $rlColors = ['#dc3545', '#28a745', '#ffc107'];
+                      @endphp
+                      <div class="d-flex justify-content-center pt-4 gap-3 flex-wrap">
+                        @foreach($rlLabels as $index => $level)
+                        @php
+                          $val = $rlData[$index] ?? 0;
+                          $pct = $rlTotal ? round(($val / $rlTotal) * 100, 1) : 0;
+                          $dot = $rlColors[$index % count($rlColors)];
+                        @endphp
+                        <div class="text-center" style="min-width:100px;">
+                          <div class="d-flex align-items-center justify-content-center mb-1">
+                            <span style="width:10px;height:10px;border-radius:50%;background:{{ $dot }};display:inline-block;margin-right:8px;"></span>
+                            <p class="mb-0 text-capitalize small">{{ $level }}</p>
+                          </div>
+                          <h6 class="mb-0 fw-semibold">{{ $val }} <small class="text-muted">({{ $pct }}%)</small></h6>
                         </div>
                         @endforeach
+                      </div>
+
+                      @php
+                        // top risk label
+                        $topLabel = 'N/A';
+                        if (!empty($rlData) && $rlTotal > 0) {
+                            $max = max($rlData);
+                            $topIdx = array_search($max, $rlData);
+                            $topLabel = ($topIdx !== false && isset($rlLabels[$topIdx])) ? $rlLabels[$topIdx] : 'N/A';
+                        }
+                        // top attacked IP if available
+                        $topIp = collect($topAttackedIPs ?? [])->first()->dst_ip ?? 'N/A';
+                        // recent attacks from chart (last bucket)
+                        $recentAttacks = 0;
+                        if (isset($chartData['attacks']) && is_array($chartData['attacks']) && count($chartData['attacks'])>0) {
+                            $recentAttacks = end($chartData['attacks']);
+                        }
+                      @endphp
+
+                      <div class="border-top mt-3 pt-3 px-3">
+                        <div class="d-flex justify-content-between align-items-center small text-muted">
+                          <div>
+                            <small class="d-block">Top Level</small>
+                            <div class="fw-semibold">{{ ucwords($topLabel) }}</div>
+                          </div>
+                          <div class="text-center">
+                            <small class="d-block">Top IP</small>
+                            <div class="fw-semibold">{{ $topIp }}</div>
+                          </div>
+                          <div class="text-end">
+                            <small class="d-block">Recent</small>
+                            <div class="fw-semibold">{{ number_format($recentAttacks) }}</div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -545,7 +602,7 @@
                     </div>
                     <div class="card-body">
                       <ul class="p-0 m-0">
-                        @forelse($topAttackedIPs as $ip)
+                        @forelse(collect($topAttackedIPs)->take(5) as $ip)
                         <li class="d-flex mb-4 pb-1">
                           <div class="avatar flex-shrink-0 me-3">
                             <span class="avatar-initial rounded bg-label-warning">
@@ -628,6 +685,17 @@
     <script src="{{ asset('admin/assets/js/main.js') }}"></script>
 
     <script>
+    /* Styles for adaptive number sizes */
+    const style = document.createElement('style');
+    style.innerHTML = `
+      h3[id="attackCount"], h3[id="benignCount"], h3[id="totalLogs"] {
+        transition: font-size .12s ease;
+      }
+      h3.num-medium { font-size: 1.2rem !important; }
+      h3.num-small { font-size: 1rem !important; }
+    `;
+    document.head.appendChild(style);
+
         const chartData = @json($chartData);
         const attackRate = {{ $attackRate }};
         const attackByType = @json($attackByType);
@@ -797,11 +865,64 @@
     </script>
 
     <script>
-    // safe DOM update helper
-    function safeSetText(id, value) {
+    /* Number formatting and adaptive size for dashboard counters */
+    function abbreviateNumber(value) {
+      if (value === null || value === undefined) return '0';
+      const num = Number(value);
+      if (isNaN(num)) return String(value);
+      const abs = Math.abs(num);
+      if (abs >= 1e12) return (num / 1e12).toFixed(2).replace(/\.00$/, '') + 'T';
+      if (abs >= 1e9) return (num / 1e9).toFixed(2).replace(/\.00$/, '') + 'B';
+      if (abs >= 1e6) return (num / 1e6).toFixed(2).replace(/\.00$/, '') + 'M';
+      if (abs >= 1e3) return (num / 1e3).toFixed(2).replace(/\.00$/, '') + 'K';
+      return num.toString();
+    }
+
+    function adjustNumberClass(el, num) {
+      if (!el) return;
+      el.classList.remove('num-medium', 'num-small');
+      const abs = Math.abs(Number(num) || 0);
+      if (abs >= 1e9) el.classList.add('num-small');
+      else if (abs >= 1e6) el.classList.add('num-medium');
+    }
+
+    function safeSetText(id, value, opts = {abbrev: true}) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (value === null || value === undefined) {
+        el.innerText = '0';
+        el.classList.remove('num-medium', 'num-small');
+        return;
+      }
+      // keep percent values as-is
+      if (String(value).includes('%') || id === 'attackRate' || opts.raw === true) {
+        el.innerText = String(value);
+        return;
+      }
+      if (opts.abbrev) {
+        const num = Number(value);
+        if (!isNaN(num)) {
+          el.innerText = abbreviateNumber(num);
+          adjustNumberClass(el, num);
+          return;
+        }
+      }
+      el.innerText = String(value);
+    }
+
+    // format existing server-rendered values on page load
+    function formatInitialNumbers() {
+      ['totalLogs', 'attackCount', 'benignCount'].forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-        el.innerText = (value === null || value === undefined) ? 0 : value;
+        const raw = el.innerText.replace(/[, ]/g, '') || '0';
+        safeSetText(id, Number(raw));
+      });
+      const ar = document.getElementById('attackRate');
+      if (ar) {
+        // ensure percent formatting (already has % in server render)
+        ar.innerText = ar.innerText.trim();
+      }
     }
 
     async function fetchData() {
@@ -810,7 +931,8 @@
             const urlParams = new URLSearchParams(window.location.search);
             const windowParam = urlParams.get('window') || 'all';
             
-            const res = await fetch(`/dashboard/refresh?window=${windowParam}`);
+            // avoid cached responses by adding a timestamp and disabling cache
+            const res = await fetch(`/dashboard/refresh?window=${windowParam}&_=${Date.now()}`, { cache: 'no-store' });
             if (!res.ok) {
                 console.error('refresh endpoint returned', res.status);
                 return;
@@ -875,8 +997,10 @@
 
     // start polling after DOM ready: initial fetch + interval
     document.addEventListener('DOMContentLoaded', function () {
-        fetchData();
-        setInterval(fetchData, 5000);
+      // format initial server-rendered counters then start polling
+      try { formatInitialNumbers(); } catch(e) { /* ignore */ }
+      fetchData();
+      setInterval(fetchData, 5000);
     });
 </script>
   </body>
