@@ -986,6 +986,111 @@
                         ]);
                     }
                 }
+
+                // Update Attack Types list
+                if (data.attackByType) {
+                    const attackLabels = data.attackByType.labels || [];
+                    const attackData = data.attackByType.data || [];
+                    const attackTotal = attackData.reduce((a, b) => a + b, 0);
+                    const attackColors = ['#f44336', '#ff9800', '#2196f3', '#9c27b0', '#4caf50'];
+                    const attackListHtml = attackLabels.slice(0, 3).map((type, i) => {
+                        const count = attackData[i] || 0;
+                        const percent = attackTotal ? Math.round((count / attackTotal) * 100) : 0;
+                        const color = attackColors[i % attackColors.length];
+                        return `<li class="mb-2">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <div class="d-flex align-items-center gap-1">
+                                    <span style="width:8px;height:8px;border-radius:2px;background:${color};display:inline-block;"></span>
+                                    <strong class="me-1 small">${type || 'Unknown'}</strong>
+                                    <small class="text-muted">${percent}%</small>
+                                </div>
+                                <span class="badge bg-light text-dark small py-1 px-2">${count.toLocaleString()}</span>
+                            </div>
+                            <div class="progress" style="height:6px; background:#f1f3f5; border-radius:6px;">
+                                <div class="progress-bar" role="progressbar" style="width:${percent}%; background:${color}; border-radius:6px;" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </li>`;
+                    }).join('');
+                    const attackListEl = document.querySelector('#attackTypeChart').parentElement.querySelector('ul');
+                    if (attackListEl) attackListEl.innerHTML = attackListHtml;
+                }
+
+                // Update Risk Level Distribution
+                if (data.riskLevelDistribution) {
+                    const rlLabels = data.riskLevelDistribution.labels || [];
+                    const rlData = data.riskLevelDistribution.data || [];
+                    const rlTotal = rlData.reduce((a, b) => a + b, 0);
+                    const rlColors = ['#dc3545', '#28a745', '#ffc107'];
+                    
+                    // Update risk level pills
+                    const riskPillsHtml = rlLabels.map((level, index) => {
+                        const val = rlData[index] || 0;
+                        const pct = rlTotal ? Math.round((val / rlTotal) * 100) : 0;
+                        const dot = rlColors[index % rlColors.length];
+                        return `<div class="text-center" style="min-width:100px;">
+                            <div class="d-flex align-items-center justify-content-center mb-1">
+                                <span style="width:10px;height:10px;border-radius:50%;background:${dot};display:inline-block;margin-right:8px;"></span>
+                                <p class="mb-0 text-capitalize small">${level}</p>
+                            </div>
+                            <h6 class="mb-0 fw-semibold">${abbreviateNumber(val)} <small class="text-muted">(${pct}%)</small></h6>
+                        </div>`;
+                    }).join('');
+                    const riskPillsEl = document.querySelector('#riskLevelChart').parentElement.querySelector('.d-flex.justify-content-center');
+                    if (riskPillsEl) riskPillsEl.innerHTML = riskPillsHtml;
+                    
+                    // Update bottom risk level stats
+                    let topLabel = 'N/A';
+                    if (rlData.length > 0 && rlTotal > 0) {
+                        const maxIdx = rlData.indexOf(Math.max(...rlData));
+                        if (maxIdx !== -1 && rlLabels[maxIdx]) {
+                            topLabel = rlLabels[maxIdx].charAt(0).toUpperCase() + rlLabels[maxIdx].slice(1);
+                        }
+                    }
+                    const topLevelEl = document.querySelector('#riskLevelChart').parentElement.querySelector('.border-top');
+                    if (topLevelEl) {
+                        const topIp = data.topAttackedIPs && data.topAttackedIPs.length > 0 ? data.topAttackedIPs[0].dst_ip : 'N/A';
+                        const recentAttacks = data.chartData && data.chartData.attacks && data.chartData.attacks.length > 0 ? data.chartData.attacks[data.chartData.attacks.length - 1] : 0;
+                        topLevelEl.innerHTML = `<div class="d-flex justify-content-between align-items-center small text-muted">
+                            <div>
+                                <small class="d-block">Top Level</small>
+                                <div class="fw-semibold">${topLabel}</div>
+                            </div>
+                            <div class="text-center">
+                                <small class="d-block">Top IP</small>
+                                <div class="fw-semibold">${topIp}</div>
+                            </div>
+                            <div class="text-end">
+                                <small class="d-block">Recent</small>
+                                <div class="fw-semibold">${abbreviateNumber(recentAttacks)}</div>
+                            </div>
+                        </div>`;
+                    }
+                }
+
+                // Update Top Attacked IPs list
+                if (data.topAttackedIPs && Array.isArray(data.topAttackedIPs)) {
+                    const topIpsHtml = data.topAttackedIPs.slice(0, 5).map(ip => `<li class="d-flex mb-4 pb-1">
+                        <div class="avatar flex-shrink-0 me-3">
+                            <span class="avatar-initial rounded bg-label-warning">
+                                <i class="bx bx-broadcast"></i>
+                            </span>
+                        </div>
+                        <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
+                            <div class="me-2">
+                                <small class="text-muted d-block mb-1">Destination IP</small>
+                                <h6 class="mb-0">${ip.dst_ip}</h6>
+                            </div>
+                            <div class="user-progress d-flex align-items-center gap-1">
+                                <h6 class="mb-0">${ip.count}</h6>
+                                <span class="text-muted">attacks</span>
+                            </div>
+                        </div>
+                    </li>`).join('');
+                    const topIpsListEl = document.querySelector('#topIPs').closest('.card').querySelector('ul');
+                    if (topIpsListEl) {
+                        topIpsListEl.innerHTML = topIpsHtml || '<li class="text-center text-muted py-3">No attack data available</li>';
+                    }
+                }
             } catch (chartErr) {
                 console.warn('chart update error', chartErr);
             }
