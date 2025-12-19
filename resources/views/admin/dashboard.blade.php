@@ -223,7 +223,18 @@
                                 The system detected 
                                 <span id="attackCountSummary" class="fw-bold text-danger">{{ $attackCount }}</span> malicious
                                 activities out of 
-                                <span id="totalLogsSummary" class="fw-bold">{{ $totalLogs }}</span> network flows today
+                                <span id="totalLogsSummary" class="fw-bold">{{ $totalLogs }}</span> network flows 
+                                <span id="timePeriodSummary">
+                                    @if(request('window') === '7d')
+                                        in the last 7 days
+                                    @elseif(request('window') === '30d')
+                                        in the last 30 days
+                                    @elseif(request('window') === 'all')
+                                        in total
+                                    @else
+                                        today
+                                    @endif
+                                </span>
                                 (<span id="attackRateSummary" class="fw-bold">{{ number_format($attackRate, 2) }}%</span> attack rate).
                             </p>
 

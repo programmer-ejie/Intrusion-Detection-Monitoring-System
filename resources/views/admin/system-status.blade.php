@@ -273,7 +273,17 @@
                     <div class="card-body">
                       <div class="d-flex justify-content-between align-items-center">
                         <div class="content-left">
-                          <span class="text-muted">Logs Today</span>
+                          <span class="text-muted">Logs 
+                            @if(request('window') === '7d')
+                              (Last 7 Days)
+                            @elseif(request('window') === '30d')
+                              (Last 30 Days)
+                            @elseif(request('window') === 'all')
+                              (All Time)
+                            @else
+                              Today
+                            @endif
+                          </span>
                           <div class="h5 fw-bold my-1">{{ number_format($systemStats['logs_today']) }}</div>
                           <small class="text-info text-nowrap"><i class="bx bx-info-circle"></i> Last Updated: Now</small>
                         </div>
@@ -292,7 +302,17 @@
                         <div class="content-left">
                           <span class="text-muted">Attacks Detected</span>
                           <div class="h5 fw-bold my-1">{{ number_format($systemStats['total_attacks']) }}</div>
-                          <small class="text-danger text-nowrap"><i class="bx bx-alert"></i> Today: {{ $systemStats['attacks_today'] }}</small>
+                          <small class="text-danger text-nowrap"><i class="bx bx-alert"></i>
+                            @if(request('window') === '7d')
+                              Last 7 Days: {{ $systemStats['attacks_today'] }}
+                            @elseif(request('window') === '30d')
+                              Last 30 Days: {{ $systemStats['attacks_today'] }}
+                            @elseif(request('window') === 'all')
+                              Total: {{ $systemStats['attacks_today'] }}
+                            @else
+                              Today: {{ $systemStats['attacks_today'] }}
+                            @endif
+                          </small>
                         </div>
                         <div class="text-danger d-flex align-items-center justify-content-center" style="min-width:48px">
                           <i class="bx bx-shield-alt-2 bx-md fs-4"></i>
