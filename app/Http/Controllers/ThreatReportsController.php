@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\DB;
 use App\Models\IntrusionLog;
 use Carbon\Carbon;
 
@@ -32,8 +33,8 @@ class ThreatReportsController extends Controller
 
         // Exclude blocked logs from threat report counts
         $total = (clone $query)->whereNull('status')->count();
-        $attacks = (clone $query)->whereNull('status')->where('risk_level', '>=', 3)->count();
-        $highRisk = (clone $query)->whereNull('status')->where('risk_level', '>=', 4)->count();
+        $attacks = (clone $query)->whereNull('status')->where('risk_level', 'attack')->count();
+        $highRisk = (clone $query)->whereNull('status')->where('risk_level', 'attack')->where('prob_attack', '>', 0.8)->count();
 
         $latest = (clone $query)->whereNull('status')->orderByDesc('created_at')->first();
 
