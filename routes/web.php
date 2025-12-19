@@ -8,19 +8,25 @@ use App\Http\Controllers\SystemStatusController;
 use App\Http\Controllers\LiveMonitorController;
 use App\Http\Controllers\ThreatReportsController;
 
-// Login routes (no session required)
+
 Route::get('/', function () {
     return view('welcome');
 })->name('logout');
 
+use Illuminate\Support\Facades\View;
+
 Route::get('/login', function () {
-    return view('auth.login');
+    if (View::exists('auth.login')) {
+        return view('auth.login');
+    }
+
+    return view('welcome', ['showNoAccountModal' => true]);
 })->name('login');
 
 Route::post('/login', [LoginController::class, 'login'])->name('login.post');
 Route::get('/logout', [LoginController::class, 'logout'])->name('logout.action');
 
-// Protected routes (require active session)
+
 Route::middleware('check.session')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'gotoDashboard'])
         ->name('admin.dashboard');
@@ -35,7 +41,6 @@ Route::middleware('check.session')->group(function () {
     
     Route::get('/live', [LiveMonitorController::class, 'gotoLive'])->name('admin.live');
 
-    // Threat Reports
     Route::get('/threat-reports', [ThreatReportsController::class, 'index'])
         ->name('admin.threat-reports');
     Route::get('/threat-reports/export', [ThreatReportsController::class, 'export'])

@@ -307,8 +307,8 @@
           </div>
         </section>
 
-        <section id="login" style="padding: 70px 20px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center;">
-           <div style="width: 100%; max-width: 70vw; padding: 0 20px;" data-aos="fade-up" data-aos-delay="0">
+          <section id="login" style="padding: 70px 20px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+            <div style="width: 100%; max-width: 700px; padding: 0 20px; margin: 0 auto;" data-aos="fade-up" data-aos-delay="0">
                 <div class="container-xxl">
                   <div class="authentication-wrapper authentication-basic" style="padding: 0 !important;">
                     <div class="authentication-inner" style="border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);">
@@ -408,16 +408,19 @@
           }
         </style>
 
-        <!-- Error Modal -->
-        <div id="errorModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-          <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 400px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
-            <div style="font-size: 3rem; color: #ff6b6b; margin-bottom: 1rem;">⚠️</div>
-            <h3 style="color: #333; font-weight: 700; margin-bottom: 0.5rem;">Login Failed</h3>
-            <p id="errorMessage" style="color: #666; margin-bottom: 1.5rem;"></p>
-            <button onclick="closeErrorModal()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.75rem 2rem; border-radius: 8px; cursor: pointer; font-weight: 600;">OK</button>
+        
+        <!-- No Account Modal (shown when auth.login view is missing) -->
+        <div id="noAccountModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+          <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 480px; width: 90%; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3); margin: 0 16px;">
+            <div style="font-size: 2.5rem; color: #ff6b6b; margin-bottom: 1rem;">ℹ️</div>
+            <h3 style="color: #333; font-weight: 700; margin-bottom: 0.5rem;">No Account Found</h3>
+            <p id="noAccountMessage" style="color: #666; margin-bottom: 1.5rem;">No login view or account has been registered yet. Please register an account or contact the administrator.</p>
+            <div style="display:flex; gap:8px; justify-content:center;">
+              <a href="/" class="buttonClose" id = "cancelBtn" style="background:#ad0d04; color: white; border-radius:8px; padding:0.6rem 1rem; text-decoration:none;">Close</a>
+            
+            </div>
           </div>
         </div>
-       
          <footer class="content-footer footer bg-footer-theme border-top">
             <div class="container-xxl py-3">
               <div class="row align-items-center">
@@ -532,8 +535,19 @@
       }
 
       // Check if there's an error from session
-      @if(session('error'))
-        showErrorModal('{{ session('error') }}');
+  
+
+      // Show 'No Account' modal when server indicates missing auth.login view
+      function showNoAccountModal(message) {
+        const modal = document.getElementById('noAccountModal');
+        const msg = document.getElementById('noAccountMessage');
+        if (message) msg.textContent = message;
+        modal.style.display = 'flex';
+      }
+
+      // Auto-invoke modal when server set the flag
+      @if(!empty($showNoAccountModal) && $showNoAccountModal)
+        showNoAccountModal('No login view or account is registered on this instance.');
       @endif
     </script>
   </body>
