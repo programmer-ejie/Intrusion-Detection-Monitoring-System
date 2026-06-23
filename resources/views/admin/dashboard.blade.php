@@ -823,41 +823,99 @@
             window.attackTypeChart = attackTypeChart;
         }
 
-        if (document.getElementById('riskLevelChart')) {
-            const riskLevelChart = new ApexCharts(
-                document.getElementById('riskLevelChart'),
-                {
-                    series: riskLevelDist.data,
-                    chart: {
-                        height: 250,
-                        type: 'donut'
-                    },
-                    colors: ['#dc3545', '#28a745', '#ffc107'],
-                    labels: riskLevelDist.labels,
-                    plotOptions: {
-                        pie: {
-                            donut: {
-                                size: '65%',
-                                labels: {
-                                    show: true,
-                                    name: {
+       if (document.getElementById('riskLevelChart')) {
+               // Map colors based on risk level names
+                const riskColors = riskLevelDist.labels.map(label => {
+                    if (label.toLowerCase() === 'benign') return '#28a745'; // Green for benign
+                    if (label.toLowerCase() === 'attack') return '#dc3545'; // Red for attack
+                    return '#ffc107'; // Yellow/amber for any other levels
+                });
+                
+                const riskLevelChart = new ApexCharts(
+                    document.getElementById('riskLevelChart'),
+                    {
+                        series: riskLevelDist.data,
+                        chart: {
+                            height: 250,
+                            type: 'donut'
+                        },
+                        colors: riskColors,
+                        labels: riskLevelDist.labels,
+                        plotOptions: {
+                            pie: {
+                                donut: {
+                                    size: '65%',
+                                    labels: {
                                         show: true,
-                                        fontSize: '12px'
-                                    },
-                                    value: {
-                                        show: true,
-                                        fontSize: '14px'
+                                        name: {
+                                            show: true,
+                                            fontSize: '12px',
+                                            color: '#333',
+                                            offsetY: -10
+                                        },
+                                        value: {
+                                            show: true,
+                                            fontSize: '14px',
+                                            color: '#333',
+                                            offsetY: 10,
+                                            formatter: function (val) {
+                                                return val
+                                            }
+                                        },
+                                        total: {
+                                            show: true,
+                                            label: 'Total',
+                                            fontSize: '12px',
+                                            color: '#666',
+                                            formatter: function (w) {
+                                                return w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                                            }
+                                        }
                                     }
                                 }
                             }
-                        }
-                    },
-                    dataLabels: { enabled: false }
-                }
-            );
-            riskLevelChart.render();
-            window.riskLevelChart = riskLevelChart;
-        }
+                        },
+                        dataLabels: { enabled: false },
+                        legend: {
+                            position: 'bottom',
+                            horizontalAlign: 'center',
+                            fontSize: '13px',
+                            markers: {
+                                width: 12,
+                                height: 12,
+                                radius: 6,
+                                fillColors: riskColors // Match legend colors to chart
+                            },
+                            itemMargin: {
+                                horizontal: 10,
+                                vertical: 5
+                            }
+                        },
+                        tooltip: {
+                            y: {
+                                formatter: function (val) {
+                                    return val + ' events'
+                                }
+                            }
+                        },
+                        stroke: {
+                            width: 1,
+                            colors: ['#fff']
+                        },
+                        responsive: [{
+                            breakpoint: 480,
+                            options: {
+                                legend: {
+                                    position: 'bottom',
+                                    fontSize: '12px'
+                                }
+                            }
+                        }]
+                    }
+                );
+                riskLevelChart.render();
+                window.riskLevelChart = riskLevelChart;
+            }
 
         if (document.getElementById('profileReportChart')) {
             const profileReportChart = new ApexCharts(
