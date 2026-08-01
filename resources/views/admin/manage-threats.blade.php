@@ -51,6 +51,19 @@
         background-color: #fff3e0;
         color: #f57c00;
       }
+      .no-value-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #f6f7fb;
+        color: #8a94a6;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: .2px;
+        border: 1px solid #e3e8f2;
+        white-space: nowrap;
+      }
       @media (max-width: 576px) {
         .btn-text-hide {
           font-size: 0;
@@ -70,6 +83,25 @@
           font-size: 0.85rem;
         }
       }
+      @media (min-width: 992px) {
+        .threats-toolbar {
+          display: flex;
+          flex-wrap: nowrap;
+          align-items: end;
+          gap: 1rem;
+        }
+        .threats-toolbar .threats-field {
+          flex: 1 1 0;
+          min-width: 0;
+        }
+        .threats-toolbar .threats-actions {
+          flex: 0 0 auto;
+          display: flex;
+          align-items: end;
+          gap: .75rem;
+          white-space: nowrap;
+        }
+      }
       .modal-body {
         word-wrap: break-word;
         overflow-wrap: break-word;
@@ -86,7 +118,7 @@
         .modal-body p { margin-bottom: 0.5rem; }
       }
 
-      /* Center columns for Risk Level, Status, and Actions */
+      /* Center columns for Events, Risk Level, Status, and Actions */
       td:nth-child(7), th:nth-child(7) {
         text-align: center;
       }
@@ -94,16 +126,15 @@
       td:nth-child(8), th:nth-child(8) {
         text-align: center;
       }
+
+      td:nth-child(9), th:nth-child(9) {
+        text-align: center;
+      }
       
       td:last-child, th:last-child {
         text-align: center;
       }
 
-      /* Hide Actions column and header when blocked status is selected */
-      .status-blocked-filter td:last-child,
-      .status-blocked-filter th:last-child {
-        display: none;
-      }
     </style>
   </head>
   <body>
@@ -241,21 +272,27 @@
 
               <div class="card">
                 <div class="card-body">
-                  <form id="threats-filter-form" method="GET" action="{{ route('admin.manage-threats') }}" class="row g-3 align-items-end">
-                    <div class="col-md-3">
+                  <form id="threats-filter-form" method="GET" action="{{ route('admin.manage-threats') }}" class="threats-toolbar">
+                    @csrf
+                    <div class="threats-field">
                       <label for="date" class="form-label small">Date</label>
                       <input type="date" id="date" name="date" value="{{ request('date') }}" class="form-control" />
                     </div>
-                    <div class="col-md-3">
+                    <div class="threats-field">
                       <label for="status" class="form-label small">Status</label>
                       <select id="status" name="status" class="form-select">
                         <option value="unresolved" {{ request('status') == 'unresolved' ? 'selected' : '' }}>Unresolved</option>
                         <option value="blocked" {{ request('status') == 'blocked' ? 'selected' : '' }}>Blocked</option>
+                        <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
                       </select>
                     </div>
-                    <div class="col-md-2 d-flex gap-2">
+                    <div class="threats-actions">
                       <button type="submit" class="btn btn-primary">Filter</button>
                       <a href="{{ route('admin.manage-threats') }}" class="btn btn-outline-secondary">Reset</a>
+                      <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#seedDemoModal">
+                        <i class="bx bx-bug me-1"></i>
+                        Seed Demo Threats
+                      </button>
                     </div>
                   </form>
                 </div>
@@ -270,6 +307,7 @@
                         <th>Dst IP</th>
                         <th>Protocol</th>
                         <th>Type</th>
+                        <th>Events</th>
                         <th>Risk Level</th>
                         <th>Status</th>
                         @if($hasNotes)
@@ -281,44 +319,53 @@
                     <tbody>
                       @forelse($threats as $threat)
                       @php
+                        $noValue = '<span class="no-value-pill">No Value</span>';
+                        $timestamp = optional($threat->created_at)->toDateTimeString();
+                        $srcIp = filled($threat->src_ip) ? e($threat->src_ip) : $noValue;
+                        $dstIp = filled($threat->dst_ip) ? e($threat->dst_ip) : $noValue;
+                        $protocol = filled($threat->protocol) ? e($threat->protocol) : $noValue;
                         $displayType = 'Threat';
                         if ($typeColumn) {
                           if ($typeColumn === 'is_malicious') {
                             $displayType = 'Attack';
                           } else {
                             $val = strtolower((string) ($threat->{$typeColumn} ?? ''));
-                            $displayType = !empty($val) ? ucfirst($val) : 'Threat';
+                            $displayType = !empty($val) ? ucfirst($val) : 'No Value';
                           }
                         }
+                        $displayNotes = ($hasNotes && filled($threat->notes)) ? e($threat->notes) : $noValue;
+                        $riskLevelText = filled($threat->risk_level) ? $threat->risk_level : 'No Value';
+                        $riskLevelClass = filled($threat->risk_level) ? 'bg-danger' : 'bg-secondary';
                         
                         $statusBadgeClass = 'status-unresolved';
                         $statusText = 'Unresolved';
-                        if ($threat->status === 'blocked') {
+                        if ($threat->group_status === 'blocked') {
                           $statusBadgeClass = 'status-blocked';
                           $statusText = 'Blocked';
-                        } elseif ($threat->status === 'resolved') {
+                        } elseif ($threat->group_status === 'resolved') {
                           $statusBadgeClass = 'status-resolved';
                           $statusText = 'Resolved';
                         }
                       @endphp
                       <tr>
                         <td>{{ $threat->id }}</td>
-                        <td>{{ optional($threat->created_at)->toDateTimeString() ?? '-' }}</td>
-                        <td><strong>{{ $threat->src_ip ?? '-' }}</strong></td>
-                        <td>{{ $threat->dst_ip ?? '-' }}</td>
-                        <td>{{ $threat->protocol ?? '-' }}</td>
-                        <td class="text-danger">{{ $displayType }}</td>
+                        <td>{{ $timestamp ?? 'No Value' }}</td>
+                        <td><strong>{!! $srcIp !!}</strong></td>
+                        <td>{!! $dstIp !!}</td>
+                        <td>{!! $protocol !!}</td>
+                        <td class="text-danger">{{ $displayType ?: 'No Value' }}</td>
+                        <td>{{ $threat->event_count ?? 1 }}</td>
                         <td>
-                          <span class="badge bg-danger">{{ $threat->risk_level ?? 'Unknown' }}</span>
+                          <span class="badge {{ $riskLevelClass }}">{{ $riskLevelText }}</span>
                         </td>
                         <td>
                           <span class="status-badge {{ $statusBadgeClass }}">{{ $statusText }}</span>
                         </td>
                         @if($hasNotes)
-                        <td>{{ $threat->notes ?? '-' }}</td>
+                        <td>{!! $displayNotes !!}</td>
                         @endif
                         <td>
-                          @if($threat->status !== 'blocked' && $threat->status !== 'resolved')
+                          @if($statusText === 'Unresolved')
                           <div class="d-flex">
                             <button type="button" class="btn btn-sm btn-danger ms-auto" data-bs-toggle="modal" data-bs-target="#blockModal{{ $threat->id }}">
                               <i class="bx bx-block"></i>
@@ -335,8 +382,8 @@
                                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body text-start">
-                                  <p>Are you sure you want to <strong>block</strong> IP address <strong class="text-danger">{{ $threat->src_ip }}</strong>?</p>
-                                  <p class="text-muted mb-0">This will mark all threats from this IP as blocked.</p>
+                                  <p>Are you sure you want to <strong>block</strong> destination IP address <strong class="text-danger">{{ $threat->dst_ip }}</strong>?</p>
+                                  <p class="text-muted mb-0">This will mark all threats for this destination IP as blocked so your local Python agent can sync them to MikroTik.</p>
                                 </div>
                                 <div class="modal-footer">
                                   <button type="button" class="btn btn-danger btn-sm btn-text-hide" data-bs-dismiss="modal">
@@ -345,7 +392,41 @@
                                   <form method="POST" action="{{ route('admin.threat.block', $threat->id) }}" style="display:inline;">
                                     @csrf
                                     <button type="submit" class="btn btn-success btn-sm btn-text-hide">
-                                      <i class="bx bx-check"></i><span class="d-none d-sm-inline"> Block IP</span>
+                                      <i class="bx bx-check"></i><span class="d-none d-sm-inline"> Block</span>
+                                    </button>
+                                  </form>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          @elseif($statusText === 'Blocked')
+                          <div class="d-flex justify-content-center">
+                            <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#restoreModal{{ $threat->id }}">
+                              <i class="bx bx-reset"></i>
+                              <span class="d-none d-sm-inline"> Restore</span>
+                            </button>
+                          </div>
+
+                          <!-- Restore Modal -->
+                          <div class="modal fade" id="restoreModal{{ $threat->id }}" tabindex="-1" aria-labelledby="restoreModalLabel{{ $threat->id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content">
+                                <div class="modal-header">
+                                  <h5 class="modal-title" id="restoreModalLabel{{ $threat->id }}">Restore Internet Access</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-start">
+                                  <p>Are you sure you want to <strong>restore</strong> access for destination IP <strong class="text-danger">{{ $threat->dst_ip }}</strong>?</p>
+                                  <p class="text-muted mb-0">This will mark the threat as resolved so your local Python agent can remove the MikroTik block rule.</p>
+                                </div>
+                                <div class="modal-footer">
+                                  <button type="button" class="btn btn-danger btn-sm btn-text-hide" data-bs-dismiss="modal">
+                                    <i class="bx bx-x"></i><span class="d-none d-sm-inline"> Cancel</span>
+                                  </button>
+                                  <form method="POST" action="{{ route('admin.threat.ignore', $threat->id) }}" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-success btn-sm btn-text-hide">
+                                      <i class="bx bx-check"></i><span class="d-none d-sm-inline"> Restore</span>
                                     </button>
                                   </form>
                                 </div>
@@ -359,7 +440,7 @@
                       </tr>
                       @empty
                       <tr>
-                        <td colspan="{{ $hasNotes ? 10 : 9 }}" class="text-center text-muted">No threats found</td>
+                        <td colspan="{{ $hasNotes ? 11 : 10 }}" class="text-center text-muted">No threats found</td>
                       </tr>
                       @endforelse
                     </tbody>
@@ -370,6 +451,63 @@
                 </div>
               </div>
             </div>
+
+            <div class="modal fade" id="seedDemoModal" tabindex="-1" aria-labelledby="seedDemoModalLabel" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="seedDemoModalLabel">Seed Demo Threats</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <form method="POST" action="{{ route('admin.threat.demo') }}">
+                    @csrf
+                    <div class="modal-body text-start">
+                      <p class="text-muted mb-4">
+                        The PPPoE name and source IP are fixed for each demo row. Edit only the destination IP before seeding.
+                      </p>
+
+                      @php
+                        $demoSeedTargets = $demoSeedTargets ?? [];
+                      @endphp
+
+                      @foreach($demoSeedTargets as $target)
+                        <div class="border rounded-3 p-3 mb-3 bg-light">
+                          <div class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                              <label class="form-label">PPPoE Name</label>
+                              <input type="text" class="form-control" value="{{ $target['name'] }}" disabled />
+                            </div>
+                            <div class="col-md-3">
+                              <label class="form-label">Source IP</label>
+                              <input type="text" class="form-control" value="{{ $target['src_ip'] }}" disabled />
+                            </div>
+                            <div class="col-md-5">
+                              <label class="form-label">Destination IP</label>
+                              <input
+                                type="text"
+                                name="{{ $target['src_ip'] === '10.0.70.2' ? 'dst_ip_jimson' : 'dst_ip_jimson2' }}"
+                                class="form-control"
+                                value="{{ old($target['src_ip'] === '10.0.70.2' ? 'dst_ip_jimson' : 'dst_ip_jimson2', $target['dst_ip']) }}"
+                                placeholder="10.0.70.9"
+                                required
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      @endforeach
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                      <button type="submit" class="btn btn-danger">
+                        <i class="bx bx-bug me-1"></i>
+                        Seed Demo Threats
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
             <div class="content-backdrop fade"></div>
           </div>
           <footer class="content-footer footer bg-footer-theme border-top">

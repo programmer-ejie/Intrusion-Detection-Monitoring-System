@@ -16,44 +16,29 @@ class DashboardController extends Controller
         $startDate = $dateRange['start'];
         $endDate = $dateRange['end'];
 
-        // Exclude blocked logs from dashboard counts
-        $logs = IntrusionLog::whereBetween('created_at', [$startDate, $endDate])
-            ->whereNull('status')
-            ->latest()
-            ->get();
+        $metrics = $this->getDashboardMetrics($window, $startDate, $endDate);
 
-        $totalLogs = $logs->count();
-        $attackCount = $logs->where('risk_level', 'attack')->count();
-        $benignCount = $logs->where('risk_level', 'benign')->count();
-        $attackRate = $totalLogs > 0 ? ($attackCount / $totalLogs) * 100 : 0;
+        // The dashboard view does not render the full raw logs table, so avoid
+        // loading the entire dataset here on every page hit.
+        $logs = collect();
 
-        $periodA_label = $this->getPeriodLabel($window, 'A');
-        $attackCountA = $attackCount;
-        $periodB_label = $this->getPeriodLabel($window, 'B');
-        $benignCountB = $benignCount;
-
-        $chartData = $this->getChartData($window, $startDate, $endDate);
-        $attackByType = $this->getAttacksByType($startDate, $endDate);
-        $topAttackedIPs = $this->getTopAttackedIPs($startDate, $endDate);
-        $riskLevelDistribution = $this->getRiskLevelDistribution($startDate, $endDate);
-
-        return view('admin.dashboard', compact(
-            'logs',
-            'totalLogs',
-            'attackCount',
-            'benignCount',
-            'attackRate',
-            'selectedWindowLabel',
-            'window',
-            'periodA_label',
-            'attackCountA',
-            'periodB_label',
-            'benignCountB',
-            'chartData',
-            'attackByType',
-            'topAttackedIPs',
-            'riskLevelDistribution'
-        ));
+        return view('admin.dashboard', [
+            'logs' => $logs,
+            'selectedWindowLabel' => $selectedWindowLabel,
+            'window' => $window,
+            'periodA_label' => $this->getPeriodLabel($window, 'A'),
+            'attackCountA' => $metrics['attackCount'],
+            'periodB_label' => $this->getPeriodLabel($window, 'B'),
+            'benignCountB' => $metrics['benignCount'],
+            'chartData' => $metrics['chartData'],
+            'attackByType' => $metrics['attackByType'],
+            'topAttackedIPs' => $metrics['topAttackedIPs'],
+            'riskLevelDistribution' => $metrics['riskLevelDistribution'],
+            'totalLogs' => $metrics['totalLogs'],
+            'attackCount' => $metrics['attackCount'],
+            'benignCount' => $metrics['benignCount'],
+            'attackRate' => $metrics['attackRate'],
+        ]);
     }
 
     private function getWindowLabel($window)
@@ -74,11 +59,18 @@ class DashboardController extends Controller
             '24h' => $end->copy()->subHours(24),
             '7d' => $end->copy()->subDays(7),
             '30d' => $end->copy()->subDays(30),
-            'all' => IntrusionLog::oldest()->value('created_at') ? Carbon::parse(IntrusionLog::oldest()->value('created_at')) : $end->copy()->subYears(5),
-            default => IntrusionLog::oldest()->value('created_at') ? Carbon::parse(IntrusionLog::oldest()->value('created_at')) : $end->copy()->subYears(5),
+            'all' => $this->getOldestCreatedAt(),
+            default => $this->getOldestCreatedAt(),
         };
 
         return ['start' => $start, 'end' => $end];
+    }
+
+    private function getOldestCreatedAt(): Carbon
+    {
+        $oldest = IntrusionLog::query()->min('created_at');
+
+        return $oldest ? Carbon::parse($oldest) : Carbon::now()->subYears(5);
     }
 
     private function getPeriodLabel($window, $period)
@@ -108,33 +100,65 @@ class DashboardController extends Controller
         $attackSeries = [];
 
         if ($window === '24h') {
+            $rows = IntrusionLog::query()
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->whereNull('status')
+                ->selectRaw("DATE_FORMAT(created_at, '%Y-%m-%d %H:00:00') as bucket, risk_level, COUNT(*) as count")
+                ->groupByRaw('bucket, risk_level')
+                ->get();
+
+            $bucketMap = [];
+            foreach ($rows as $row) {
+                $bucketMap[$row->bucket][$row->risk_level] = (int) $row->count;
+            }
+
             for ($i = 0; $i < 24; $i++) {
                 $hourStart = $startDate->copy()->addHours($i);
-                $hourEnd = $hourStart->copy()->addHour();
+                $bucket = $hourStart->format('Y-m-d H:00:00');
                 $labels[] = $hourStart->format('H:00');
-                $benignSeries[] = IntrusionLog::whereBetween('created_at', [$hourStart, $hourEnd])->whereNull('status')->where('risk_level', 'benign')->count();
-                $attackSeries[] = IntrusionLog::whereBetween('created_at', [$hourStart, $hourEnd])->whereNull('status')->where('risk_level', 'attack')->count();
+                $benignSeries[] = $bucketMap[$bucket]['benign'] ?? 0;
+                $attackSeries[] = $bucketMap[$bucket]['attack'] ?? 0;
             }
         } elseif ($window === 'all') {
-            $rows = IntrusionLog::whereBetween('created_at', [$startDate, $endDate])
+            $rows = IntrusionLog::query()
+                ->whereBetween('created_at', [$startDate, $endDate])
                 ->whereNull('status')
-                ->selectRaw("DATE(created_at) as date, SUM(case when risk_level = 'benign' then 1 else 0 end) as benign, SUM(case when risk_level = 'attack' then 1 else 0 end) as attacks")
-                ->groupBy('date')
-                ->orderBy('date')
+                ->selectRaw("DATE(created_at) as bucket, risk_level, COUNT(*) as count")
+                ->groupByRaw('bucket, risk_level')
+                ->orderBy('bucket')
                 ->get();
+
+            $bucketMap = [];
             foreach ($rows as $row) {
-                $labels[] = Carbon::parse($row->date)->format('M d');
-                $benignSeries[] = (int) $row->benign;
-                $attackSeries[] = (int) $row->attacks;
+                $bucketMap[$row->bucket][$row->risk_level] = (int) $row->count;
+            }
+
+            foreach (array_keys($bucketMap) as $bucket) {
+                $labels[] = Carbon::parse($bucket)->format('M d');
+                $benignSeries[] = $bucketMap[$bucket]['benign'] ?? 0;
+                $attackSeries[] = $bucketMap[$bucket]['attack'] ?? 0;
             }
         } else {
             $days = $window === '7d' ? 7 : 30;
+            $rows = IntrusionLog::query()
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->whereNull('status')
+                ->selectRaw("DATE(created_at) as bucket, risk_level, COUNT(*) as count")
+                ->groupByRaw('bucket, risk_level')
+                ->orderBy('bucket')
+                ->get();
+
+            $bucketMap = [];
+            foreach ($rows as $row) {
+                $bucketMap[$row->bucket][$row->risk_level] = (int) $row->count;
+            }
+
             for ($i = 0; $i < $days; $i++) {
-                $dayStart = $startDate->copy()->startOfDay()->addDays($i);
-                $dayEnd = $dayStart->copy()->endOfDay();
-                $labels[] = $dayStart->format('M d');
-                $benignSeries[] = IntrusionLog::whereBetween('created_at', [$dayStart, $dayEnd])->whereNull('status')->where('risk_level', 'benign')->count();
-                $attackSeries[] = IntrusionLog::whereBetween('created_at', [$dayStart, $dayEnd])->whereNull('status')->where('risk_level', 'attack')->count();
+                $day = $startDate->copy()->startOfDay()->addDays($i);
+                $bucket = $day->format('Y-m-d');
+                $labels[] = $day->format('M d');
+                $benignSeries[] = $bucketMap[$bucket]['benign'] ?? 0;
+                $attackSeries[] = $bucketMap[$bucket]['attack'] ?? 0;
             }
         }
 
@@ -206,36 +230,45 @@ class DashboardController extends Controller
         $startDate = $dateRange['start'];
         $endDate = $dateRange['end'];
 
-        // Exclude blocked logs from refreshed counts
-        $logs = IntrusionLog::whereBetween('created_at', [$startDate, $endDate])
-            ->whereNull('status')
-            ->latest()
-            ->get();
-
-        $totalLogs = $logs->count();
-        $attackCount = $logs->where('risk_level', 'attack')->count();
-        $benignCount = $logs->where('risk_level', 'benign')->count();
-        $attackRate = $totalLogs > 0 ? ($attackCount / $totalLogs) * 100 : 0;
-
-        $chartData = $this->getChartData($window, $startDate, $endDate);
-        $attackByType = $this->getAttacksByType($startDate, $endDate);
-        $topAttackedIPs = $this->getTopAttackedIPs($startDate, $endDate)
-            ->map(fn($ip) => ['dst_ip' => $ip->dst_ip, 'count' => $ip->count])
-            ->values()
-            ->toArray();
-        $riskLevelDistribution = $this->getRiskLevelDistribution($startDate, $endDate);
+        $metrics = $this->getDashboardMetrics($window, $startDate, $endDate);
 
         return response()->json([
             'selectedWindowLabel' => $selectedWindowLabel,
             'window' => $window,
+            'totalLogs' => $metrics['totalLogs'],
+            'attackCount' => $metrics['attackCount'],
+            'benignCount' => $metrics['benignCount'],
+            'attackRate' => round($metrics['attackRate'], 2),
+            'chartData' => $metrics['chartData'],
+            'attackByType' => $metrics['attackByType'],
+            'topAttackedIPs' => $metrics['topAttackedIPs'],
+            'riskLevelDistribution' => $metrics['riskLevelDistribution'],
+        ]);
+    }
+
+    private function getDashboardMetrics($window, Carbon $startDate, Carbon $endDate): array
+    {
+        $baseQuery = IntrusionLog::query()
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->whereNull('status');
+
+        $totalLogs = (clone $baseQuery)->count();
+        $attackCount = (clone $baseQuery)->where('risk_level', 'attack')->count();
+        $benignCount = (clone $baseQuery)->where('risk_level', 'benign')->count();
+        $attackRate = $totalLogs > 0 ? ($attackCount / $totalLogs) * 100 : 0;
+
+        return [
             'totalLogs' => $totalLogs,
             'attackCount' => $attackCount,
             'benignCount' => $benignCount,
-            'attackRate' => round($attackRate, 2),
-            'chartData' => $chartData,
-            'attackByType' => $attackByType,
-            'topAttackedIPs' => $topAttackedIPs,
-            'riskLevelDistribution' => $riskLevelDistribution,
-        ]);
+            'attackRate' => $attackRate,
+            'chartData' => $this->getChartData($window, $startDate, $endDate),
+            'attackByType' => $this->getAttacksByType($startDate, $endDate),
+            'topAttackedIPs' => $this->getTopAttackedIPs($startDate, $endDate)
+                ->map(fn ($ip) => ['dst_ip' => $ip->dst_ip, 'count' => $ip->count])
+                ->values()
+                ->toArray(),
+            'riskLevelDistribution' => $this->getRiskLevelDistribution($startDate, $endDate),
+        ];
     }
 }

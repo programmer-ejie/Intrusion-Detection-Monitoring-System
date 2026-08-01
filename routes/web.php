@@ -51,6 +51,8 @@ Route::middleware('check.session')->group(function () {
 
     Route::get('/manage-threats', [ManageThreatController::class, 'index'])
         ->name('admin.manage-threats');
+    Route::post('/threats/demo', [ManageThreatController::class, 'demo'])
+        ->name('admin.threat.demo');
     Route::post('/threats/{id}/block', [ManageThreatController::class, 'block'])
         ->name('admin.threat.block');
     Route::post('/threats/{id}/ignore', [ManageThreatController::class, 'ignore'])
@@ -58,7 +60,6 @@ Route::middleware('check.session')->group(function () {
     Route::post('/threats/bulk-action', [ManageThreatController::class, 'bulkAction'])
         ->name('admin.threat.bulk-action');
 });
-
 
 
 

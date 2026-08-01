@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('intrusion_logs', function (Blueprint $table) {
-            $table->enum('status', ['blocked', 'resolved'])->nullable()->default(null)->after('attack_type');
-        });
+        if (! Schema::hasColumn('intrusion_logs', 'status')) {
+            Schema::table('intrusion_logs', function (Blueprint $table) {
+                $table->enum('status', ['blocked', 'resolved'])->nullable()->default(null)->after('attack_type');
+            });
+        }
     }
 
     /**

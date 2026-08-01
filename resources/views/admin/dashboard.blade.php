@@ -568,7 +568,7 @@
                             $topLabel = ($topIdx !== false && isset($rlLabels[$topIdx])) ? $rlLabels[$topIdx] : 'N/A';
                         }
                         // top attacked IP if available
-                        $topIp = collect($topAttackedIPs ?? [])->first()->dst_ip ?? 'N/A';
+                        $topIp = data_get(collect($topAttackedIPs ?? [])->first(), 'dst_ip', 'N/A');
                         // recent attacks from chart (last bucket)
                         $recentAttacks = 0;
                         if (isset($chartData['attacks']) && is_array($chartData['attacks']) && count($chartData['attacks'])>0) {
@@ -621,7 +621,7 @@
                     <div class="card-body">
                       <ul class="p-0 m-0">
                         @forelse(collect($topAttackedIPs)->take(5) as $ip)
-                        <li class="d-flex mb-4 pb-1">
+                          <li class="d-flex mb-4 pb-1">
                           <div class="avatar flex-shrink-0 me-3">
                             <span class="avatar-initial rounded bg-label-warning">
                               <i class="bx bx-broadcast"></i>
@@ -630,10 +630,10 @@
                           <div class="d-flex w-100 flex-wrap align-items-center justify-content-between gap-2">
                             <div class="me-2">
                               <small class="text-muted d-block mb-1">Destination IP</small>
-                              <h6 class="mb-0">{{ $ip->dst_ip }}</h6>
+                               <h6 class="mb-0">{{ data_get($ip, 'dst_ip', 'N/A') }}</h6>
                             </div>
                             <div class="user-progress d-flex align-items-center gap-1">
-                              <h6 class="mb-0">{{ $ip->count }}</h6>
+                              <h6 class="mb-0">{{ data_get($ip, 'count', 0) }}</h6>
                               <span class="text-muted">attacks</span>
                             </div>
                           </div>
@@ -1001,7 +1001,15 @@
       }
     }
 
+    let dashboardRefreshInFlight = false;
+    const dashboardRefreshIntervalMs = 15000;
+
     async function fetchData() {
+        if (dashboardRefreshInFlight) {
+            return;
+        }
+
+        dashboardRefreshInFlight = true;
         try {
             // Get the current window parameter from URL
             const urlParams = new URLSearchParams(window.location.search);
@@ -1170,6 +1178,8 @@
 
         } catch (err) {
             console.error('Error fetching dashboard data:', err);
+        } finally {
+            dashboardRefreshInFlight = false;
         }
     }
 
@@ -1178,7 +1188,11 @@
       // format initial server-rendered counters then start polling
       try { formatInitialNumbers(); } catch(e) { /* ignore */ }
       fetchData();
-      setInterval(fetchData, 5000);
+      setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          fetchData();
+        }
+      }, dashboardRefreshIntervalMs);
     });
 </script>
   </body>

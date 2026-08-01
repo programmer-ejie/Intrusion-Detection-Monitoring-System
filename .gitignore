@@ -22,3 +22,5 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+commands.txt
+setup/data/model/ids_ensemble.joblib

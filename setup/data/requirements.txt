@@ -1,0 +1,12 @@
+flask
+gunicorn
+joblib
+numpy
+pandas
+scikit-learn==1.6.1
+xgboost
+requests
+python-dotenv
+pymysql
+routeros-api
+# Restore uses the built-in RouterOS API and does not need an extra SSH/Paramiko package.
