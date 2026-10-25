@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Polls Hostinger MySQL for blocked threats and keeps destination IPs synced on MikroTik.
+Polls Hostinger MySQL and keeps blocked PPPoE subscribers synced on MikroTik.
 Run this on a machine that can reach the MikroTik router.
 """
 
@@ -57,6 +57,7 @@ DB_NAME = os.getenv("DB_DATABASE", "").strip()
 DB_USER = os.getenv("DB_USERNAME", "").strip()
 DB_PASSWORD = os.getenv("DB_PASSWORD", "").strip()
 DB_TABLE = os.getenv("DB_TABLE", "intrusion_logs").strip()
+DB_INCIDENT_TABLE = os.getenv("DB_INCIDENT_TABLE", "threat_incidents").strip()
 
 MIKROTIK_HOST = os.getenv("MIKROTIK_HOST", "192.168.96.1").strip()
 MIKROTIK_USER = os.getenv("MIKROTIK_USER", "admin").strip()
@@ -64,18 +65,6 @@ MIKROTIK_PASSWORD = os.getenv("MIKROTIK_PASSWORD", "").strip()
 MIKROTIK_PORT = int(os.getenv("MIKROTIK_PORT", "8728"))
 BLOCK_SCAN_INTERVAL = int(os.getenv("BLOCK_SCAN_INTERVAL", "20"))
 BLOCK_RULE_PREFIX = os.getenv("BLOCK_RULE_PREFIX", "IDS block").strip()
-PPPOE_TARGETS = {
-    "10.0.70.2": {
-        "ppp_name": "jimson",
-        "label": "pppoe-jimson",
-    },
-    "10.0.70.5": {
-        "ppp_name": "jimson2",
-        "label": "pppoe-jimson2",
-    },
-}
-
-
 class RouterOsDirectClient:
     def __init__(self, host: str, port: int, username: str, password: str, timeout: int = 10):
         self.host = host
@@ -246,20 +235,15 @@ def db_connect():
     )
 
 
-def get_status_groups():
+def get_blocked_subscribers():
     if not DB_NAME or not DB_USER:
         raise RuntimeError("Missing DB credentials in .env")
 
     query = f"""
-        SELECT
-            src_ip,
-            MAX(CASE WHEN status = 'blocked' THEN 1 ELSE 0 END) AS has_blocked,
-            MAX(CASE WHEN status IN ('resolved', 'restored') THEN 1 ELSE 0 END) AS has_resolved
-        FROM {DB_TABLE}
-        WHERE status IN ('blocked', 'resolved', 'restored')
-          AND src_ip IS NOT NULL
-          AND src_ip <> ''
-        GROUP BY src_ip
+        SELECT DISTINCT pppoe_name
+        FROM {DB_INCIDENT_TABLE}
+        WHERE status = 'blocked'
+          AND pppoe_name IS NOT NULL AND pppoe_name <> ''
     """
     logger.debug(f"Executing database query: {query}")
     with db_connect() as conn:
@@ -268,6 +252,29 @@ def get_status_groups():
             rows = cursor.fetchall()
     logger.debug(f"Database query returned {len(rows)} rows")
     return rows
+
+
+def get_pending_restores():
+    if not DB_NAME or not DB_USER:
+        raise RuntimeError("Missing DB credentials in .env")
+
+    query = f"""
+        SELECT i.id, i.pppoe_name
+        FROM {DB_INCIDENT_TABLE} i
+        WHERE i.status = 'resolved'
+          AND i.firewall_synced_at IS NULL
+          AND i.pppoe_name IS NOT NULL AND i.pppoe_name <> ''
+          AND NOT EXISTS (
+              SELECT 1 FROM {DB_INCIDENT_TABLE} blocked
+              WHERE blocked.pppoe_name = i.pppoe_name
+                AND blocked.status = 'blocked'
+          )
+        ORDER BY i.id
+    """
+    with db_connect() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(query)
+            return cursor.fetchall()
 
 
 class MikroTikBlocker:
@@ -494,40 +501,153 @@ class MikroTikBlocker:
 
         logger.info(f"=== UNBLOCK OPERATION COMPLETED FOR {dst_ip} (removed {removed_count} rule(s)) ===")
 
-    def resolve_current_ip_for_source(self, src_ip: str) -> str:
-        target = PPPOE_TARGETS.get(src_ip)
-        if not target:
-            raise RuntimeError(f"No PPPoE target mapping configured for source IP {src_ip}")
+    def _subscriber_rule_comment(self, pppoe_name: str) -> str:
+        return f"{BLOCK_RULE_PREFIX} pppoe:{pppoe_name.strip()}"[:255]
 
+    def _get_subscriber_rules(self, pppoe_name: str):
+        self.ensure_connected()
+        resource = self.api.get_resource("/ip/firewall/filter")
+        comment = self._subscriber_rule_comment(pppoe_name)
+        rows = resource.get(chain="forward", action="drop", comment=comment)
+        return resource, rows
+
+    def _known_ips_for_pppoe(self, pppoe_name: str):
+        query = f"""
+            SELECT DISTINCT src_ip
+            FROM {DB_TABLE}
+            WHERE pppoe_name = %s
+              AND src_ip IS NOT NULL
+              AND src_ip <> ''
+        """
+        with db_connect() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, (pppoe_name,))
+                return {str(row[0]).strip() for row in cursor.fetchall() if row[0]}
+
+    def _remove_legacy_subscriber_rules(self, pppoe_name: str):
+        known_ips = self._known_ips_for_pppoe(pppoe_name)
+        if not known_ips:
+            return
+        self.ensure_connected()
+        resource = self.api.get_resource("/ip/firewall/filter")
+        for row in resource.get(chain="forward", action="drop"):
+            comment = str(row.get("comment") or "").strip()
+            if not any(comment == f"{BLOCK_RULE_PREFIX} {address}" for address in known_ips):
+                continue
+            rule_id = self._get_rule_id(row)
+            if rule_id:
+                logger.info(
+                    "Removing legacy IP-owned rule %s for PPPoE %s",
+                    comment,
+                    pppoe_name,
+                )
+                self._remove_firewall_rule(resource, rule_id, pppoe_name)
+
+    def resolve_current_ip_for_pppoe(self, pppoe_name: str) -> str:
         self.ensure_connected()
         resource = self.api.get_resource("/ppp/active")
-        rows = resource.get(name=target["ppp_name"])
+        rows = resource.get(name=pppoe_name)
         if not rows:
-            all_rows = resource.get()
+            expected = pppoe_name.strip().lower()
             rows = [
-                row for row in all_rows
-                if str(row.get("name") or "").strip().lower() == target["ppp_name"].lower()
-                or target["ppp_name"].lower() in str(row.get("name") or "").strip().lower()
+                row for row in resource.get()
+                if str(row.get("name") or "").strip().lower() == expected
             ]
-
         if not rows:
-            raise RuntimeError(
-                f"Could not find an active PPP session for source IP {src_ip} ({target['ppp_name']})"
-            )
+            raise RuntimeError(f"PPPoE subscriber {pppoe_name} is not currently active")
 
         current_ip = str(rows[0].get("address") or "").strip()
         if not current_ip:
-            raise RuntimeError(
-                f"PPP session for source IP {src_ip} ({target['ppp_name']}) does not have an assigned address"
-            )
-
-        logger.info(
-            "Resolved source IP %s to live destination IP %s via PPPoE %s",
-            src_ip,
-            current_ip,
-            target["label"],
-        )
+            raise RuntimeError(f"Active PPPoE subscriber {pppoe_name} has no assigned address")
+        logger.info("Resolved PPPoE subscriber %s to current IP %s", pppoe_name, current_ip)
         return current_ip
+
+    def block_subscriber(self, pppoe_name: str):
+        self._remove_legacy_subscriber_rules(pppoe_name)
+        current_ip = self.resolve_current_ip_for_pppoe(pppoe_name)
+        resource, rows = self._get_subscriber_rules(pppoe_name)
+        comment = self._subscriber_rule_comment(pppoe_name)
+
+        current_rows = []
+        for row in rows:
+            rule_ip = str(row.get("src-address") or row.get("src_address") or "").strip()
+            if rule_ip == current_ip:
+                current_rows.append(row)
+                continue
+            rule_id = self._get_rule_id(row)
+            if rule_id:
+                logger.info(
+                    "Removing stale rule for PPPoE %s (old IP %s, current IP %s)",
+                    pppoe_name,
+                    rule_ip or "unknown",
+                    current_ip,
+                )
+                self._remove_firewall_rule(resource, rule_id, pppoe_name)
+
+        enabled_rows = [
+            row for row in current_rows
+            if str(row.get("disabled") or "").lower() not in {"true", "yes", "1"}
+        ]
+        disabled_rows = [
+            row for row in current_rows
+            if str(row.get("disabled") or "").lower() in {"true", "yes", "1"}
+        ]
+
+        if enabled_rows:
+            logger.info("Current block rule already exists for PPPoE %s at %s", pppoe_name, current_ip)
+        elif disabled_rows:
+            for row in disabled_rows:
+                rule_id = self._get_rule_id(row)
+                if rule_id:
+                    self._set_firewall_rule_enabled(resource, rule_id, pppoe_name, True)
+        else:
+            resource.add(
+                chain="forward",
+                src_address=current_ip,
+                action="drop",
+                comment=comment,
+            )
+            logger.info("Created block rule for PPPoE %s at %s", pppoe_name, current_ip)
+
+        self.clear_connections(current_ip)
+
+    def unblock_subscriber(self, pppoe_name: str):
+        self._remove_legacy_subscriber_rules(pppoe_name)
+        resource, rows = self._get_subscriber_rules(pppoe_name)
+        rule_ips = set()
+        for row in rows:
+            rule_ip = str(row.get("src-address") or row.get("src_address") or "").strip()
+            if rule_ip:
+                rule_ips.add(rule_ip)
+            rule_id = self._get_rule_id(row)
+            if rule_id:
+                self._remove_firewall_rule(resource, rule_id, pppoe_name)
+
+        try:
+            rule_ips.add(self.resolve_current_ip_for_pppoe(pppoe_name))
+        except RuntimeError as exc:
+            logger.info("Restore for offline PPPoE subscriber %s: %s", pppoe_name, exc)
+
+        for address in rule_ips:
+            self.clear_connections(address)
+        logger.info("Removed %d subscriber-owned rule(s) for PPPoE %s", len(rows), pppoe_name)
+
+    def mark_restore_synced(self, incident_id: int):
+        if not DB_NAME or not DB_USER:
+            raise RuntimeError("Missing DB credentials in .env")
+        query = f"""
+            UPDATE {DB_INCIDENT_TABLE}
+            SET firewall_synced_at = NOW(), updated_at = NOW()
+            WHERE id = %s AND status = 'resolved'
+        """
+        with db_connect() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, (incident_id,))
+                logger.info(
+                    "Marked restore incident %s as firewall-synced; rows affected: %d",
+                    incident_id,
+                    cursor.rowcount,
+                )
 
     def _set_firewall_rule_enabled(self, resource, rule_id: str, dst_ip: str, enabled: bool):
         logger.debug(f"Setting firewall rule {rule_id} enabled={enabled} for {dst_ip}")
@@ -626,24 +746,6 @@ class MikroTikBlocker:
         with RouterOsDirectClient(MIKROTIK_HOST, MIKROTIK_PORT, MIKROTIK_USER, MIKROTIK_PASSWORD) as client:
             client.run("/ip/firewall/filter/remove", params)
 
-    def clear_status(self, src_ip: str):
-        logger.info(f"Clearing database status for source IP {src_ip}")
-        if not DB_NAME or not DB_USER:
-            raise RuntimeError("Missing DB credentials in .env")
-
-        query = f"""
-            UPDATE {DB_TABLE}
-            SET status = NULL
-            WHERE src_ip = %s
-              AND status IN ('resolved', 'restored')
-        """
-        logger.debug(f"Executing status clear query: {query}")
-        with db_connect() as conn:
-            with conn.cursor() as cursor:
-                cursor.execute(query, (src_ip,))
-                rows_affected = cursor.rowcount
-                logger.info(f"Cleared status for source IP {src_ip}; rows affected: {rows_affected}")
-
     def clear_connections(self, dst_ip: str):
         logger.info(f"Clearing active connections for {dst_ip}")
         self.ensure_connected()
@@ -735,41 +837,38 @@ def main():
         
         try:
             # Get current status from database
-            status_groups = get_status_groups()
-            blocked_src_ips = [row[0] for row in status_groups if row[0] and int(row[1] or 0) > 0]
-            resolved_src_ips = [row[0] for row in status_groups if row[0] and int(row[1] or 0) == 0 and int(row[2] or 0) > 0]
+            blocked_pppoe_names = [row[0] for row in get_blocked_subscribers() if row[0]]
+            pending_restores = get_pending_restores()
 
             logger.info(
-                "Database scan results: %d source IP(s) to block, %d source IP(s) to unblock",
-                len(blocked_src_ips),
-                len(resolved_src_ips)
+                "Database scan results: %d PPPoE subscriber(s) to block, %d to unblock",
+                len(blocked_pppoe_names),
+                len(pending_restores)
             )
 
-            if blocked_src_ips:
-                logger.info(f"Source IPs to BLOCK: {', '.join(blocked_src_ips)}")
-            if resolved_src_ips:
-                logger.info(f"Source IPs to UNBLOCK: {', '.join(resolved_src_ips)}")
+            if blocked_pppoe_names:
+                logger.info(f"PPPoE subscribers to BLOCK: {', '.join(blocked_pppoe_names)}")
+            if pending_restores:
+                logger.info("PPPoE subscribers to UNBLOCK: %s", ", ".join(row[1] for row in pending_restores))
 
             # Process block operations
-            for src_ip in blocked_src_ips:
+            for pppoe_name in blocked_pppoe_names:
                 try:
-                    logger.info(f"Processing BLOCK for source IP {src_ip}")
-                    current_ip = blocker.resolve_current_ip_for_source(src_ip)
-                    blocker.block_ip(current_ip)
+                    logger.info(f"Processing BLOCK for PPPoE subscriber {pppoe_name}")
+                    blocker.block_subscriber(pppoe_name)
                 except Exception as e:
-                    logger.error(f"Failed processing blocked source IP {src_ip}: {e}")
+                    logger.error(f"Failed processing blocked PPPoE subscriber {pppoe_name}: {e}")
                     logger.error(traceback.format_exc())
 
             # Process unblock operations
-            for src_ip in resolved_src_ips:
+            for incident_id, pppoe_name in pending_restores:
                 try:
-                    logger.info(f"Processing UNBLOCK for source IP {src_ip}")
-                    current_ip = blocker.resolve_current_ip_for_source(src_ip)
-                    blocker.unblock_ip(current_ip)
-                    blocker.clear_status(src_ip)
-                    logger.info(f"Successfully processed unblock for source IP {src_ip} via live IP {current_ip}")
+                    logger.info(f"Processing UNBLOCK for PPPoE subscriber {pppoe_name}")
+                    blocker.unblock_subscriber(pppoe_name)
+                    blocker.mark_restore_synced(incident_id)
+                    logger.info(f"Successfully processed unblock for PPPoE subscriber {pppoe_name}")
                 except Exception as e:
-                    logger.error(f"Failed processing restored/resolved source IP {src_ip}: {e}")
+                    logger.error(f"Failed processing restored PPPoE subscriber {pppoe_name}: {e}")
                     logger.error(traceback.format_exc())
 
             logger.info(f"--- SCAN ITERATION {iteration} COMPLETED ---")

@@ -3,16 +3,16 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Schema;
 use App\Models\IntrusionLog;
+use App\Models\ThreatIncident;
 
 class ManageThreatController extends Controller
 {
     public function index(Request $request)
     {
         $perPage = 10;
-        $query = IntrusionLog::query();
+        $query = ThreatIncident::query()->with('latestLog');
 
         // Get all columns to check for type column
         $allCols = Schema::getColumnListing('intrusion_logs');
@@ -27,53 +27,35 @@ class ManageThreatController extends Controller
             }
         }
 
-        // Filter to show only attacks/threats
-        if ($typeColumn) {
-            if ($typeColumn === 'is_malicious') {
-                $query->where($typeColumn, true);
-            } else {
-                // Show only non-benign/non-normal entries
-                $query->where($typeColumn, '!=', 'benign')
-                      ->where($typeColumn, '!=', 'normal')
-                      ->where($typeColumn, '!=', '');
-            }
-        }
-
-        // Filter by date if provided
         if ($request->filled('date')) {
-            $query->whereDate('created_at', $request->input('date'));
+            $query->whereDate('last_detected_at', $request->input('date'));
         }
 
-        // Load logs newest-first, then collapse them to one row per destination IP.
-        $logs = $query->orderByDesc('created_at')->orderByDesc('id')->get();
-        $threats = $logs->groupBy('dst_ip')->map(function ($items) {
-            $latest = clone $items->first();
-            $latest->setAttribute('event_count', $items->count());
-            $latest->setAttribute('group_status', $this->resolveGroupStatus($items));
-            return $latest;
-        });
-
-        // Filter by status after grouping so one IP still appears only once.
         $status = $request->input('status', 'unresolved');
-        if ($status === 'unresolved') {
-            $threats = $threats->filter(fn ($threat) => blank($threat->group_status));
-        } elseif (in_array($status, ['blocked', 'resolved'], true)) {
-            $threats = $threats->filter(fn ($threat) => $threat->group_status === $status);
+        if (in_array($status, ['unresolved', 'blocked', 'resolved'], true)) {
+            $query->where('status', $status);
         }
 
-        $threats = $threats->values();
-        $page = LengthAwarePaginator::resolveCurrentPage();
-        $pagedThreats = $threats->slice(($page - 1) * $perPage, $perPage)->values();
-        $threats = new LengthAwarePaginator($pagedThreats, $threats->count(), $perPage, $page, [
-            'path' => $request->url(),
-            'query' => $request->query(),
-        ]);
+        $incidents = $query->orderByDesc('last_detected_at')->orderByDesc('id')
+            ->paginate($perPage)->withQueryString();
+        $incidents->getCollection()->transform(function (ThreatIncident $incident) {
+            $threat = $incident->latestLog ? clone $incident->latestLog : new IntrusionLog();
+            $threat->setAttribute('incident_id', $incident->id);
+            $threat->setAttribute('pppoe_name', $incident->pppoe_name);
+            $threat->setAttribute('attack_type', $incident->attack_type);
+            $threat->setAttribute('event_count', $incident->event_count);
+            $threat->setAttribute('group_status', $incident->status);
+            $threat->setAttribute('created_at', $incident->last_detected_at);
+            return $threat;
+        });
+        $threats = $incidents;
 
         $hasNotes = in_array('notes', $allCols, true);
         $demoSeedTargets = [
             [
                 'name' => 'pppoe-jimson',
                 'src_ip' => '10.0.70.2',
+                'pppoe_name' => 'jimson',
                 'dst_ip' => optional(
                     IntrusionLog::where('src_ip', '10.0.70.2')
                         ->orderByDesc('created_at')
@@ -84,6 +66,7 @@ class ManageThreatController extends Controller
             [
                 'name' => 'pppoe-jimson2',
                 'src_ip' => '10.0.70.5',
+                'pppoe_name' => 'jimson2',
                 'dst_ip' => optional(
                     IntrusionLog::where('src_ip', '10.0.70.5')
                         ->orderByDesc('created_at')
@@ -93,26 +76,36 @@ class ManageThreatController extends Controller
             ],
         ];
 
-        return view('admin.manage-threats', compact('threats', 'typeColumn', 'hasNotes', 'demoSeedTargets'));
+        $hasPppoeName = in_array('pppoe_name', $allCols, true);
+
+        return view('admin.manage-threats', compact('threats', 'typeColumn', 'hasNotes', 'hasPppoeName', 'demoSeedTargets'));
     }
 
     public function block(Request $request, $id)
     {
-        $log = IntrusionLog::findOrFail($id);
-        $dstIp = $log->dst_ip;
+        $incident = ThreatIncident::findOrFail($id);
+        abort_if(blank($incident->pppoe_name), 422, 'A PPPoE identity is required to block safely.');
+        $incident->update([
+            'status' => 'blocked',
+            'blocked_at' => now(),
+            'restored_at' => null,
+            'firewall_synced_at' => null,
+        ]);
 
-        // Mark all logs with this destination IP as blocked so the local Python/MikroTik agent can sync them.
-        IntrusionLog::where('dst_ip', $dstIp)->update(['status' => 'blocked']);
-
-        return redirect()->back()->with('success', "All logs for destination IP {$dstIp} have been marked as blocked.");
+        return redirect()->back()->with('success', "Subscriber {$incident->pppoe_name} has been marked as blocked.");
     }
 
     public function ignore(Request $request, $id)
     {
-        $log = IntrusionLog::findOrFail($id);
-        IntrusionLog::where('dst_ip', $log->dst_ip)->update(['status' => 'resolved']);
+        $incident = ThreatIncident::findOrFail($id);
+        abort_if(blank($incident->pppoe_name), 422, 'A PPPoE identity is required to restore safely.');
+        $incident->update([
+            'status' => 'resolved',
+            'restored_at' => now(),
+            'firewall_synced_at' => null,
+        ]);
 
-        return redirect()->back()->with('success', "Internet access for destination IP {$log->dst_ip} has been restored.");
+        return redirect()->back()->with('success', "Internet access for subscriber {$incident->pppoe_name} has been marked for restoration.");
     }
 
     public function bulkAction(Request $request)
@@ -125,8 +118,12 @@ class ManageThreatController extends Controller
         }
 
         $status = $action === 'block' ? 'blocked' : 'resolved';
-        $dstIps = IntrusionLog::whereIn('id', $ids)->pluck('dst_ip')->filter()->unique()->values();
-        IntrusionLog::whereIn('dst_ip', $dstIps)->update(['status' => $status]);
+        $timestampColumn = $status === 'blocked' ? 'blocked_at' : 'restored_at';
+        ThreatIncident::whereIn('id', $ids)->whereNotNull('pppoe_name')->update([
+            'status' => $status,
+            $timestampColumn => now(),
+            'firewall_synced_at' => null,
+        ]);
 
         $count = count($ids);
         $message = $action === 'block' 
@@ -146,12 +143,14 @@ class ManageThreatController extends Controller
         $demoThreats = [
             [
                 'name' => 'pppoe-jimson',
+                'pppoe_name' => 'jimson',
                 'src_ip' => '10.0.70.2',
                 'dst_ip' => $request->input('dst_ip_jimson'),
                 'notes' => 'Dummy attacker from <pppoe-jimson> main',
             ],
             [
                 'name' => 'pppoe-jimson2',
+                'pppoe_name' => 'jimson2',
                 'src_ip' => '10.0.70.5',
                 'dst_ip' => $request->input('dst_ip_jimson2'),
                 'notes' => 'Dummy attacker from <pppoe-jimson2> main',
@@ -159,14 +158,19 @@ class ManageThreatController extends Controller
         ];
 
         foreach ($demoThreats as $threat) {
-            IntrusionLog::where('src_ip', $threat['src_ip'])
-                ->where('attack_type', 'demo attacker')
-                ->update([
-                    'dst_ip' => $threat['dst_ip'],
-                ]);
+            $incident = ThreatIncident::create([
+                'pppoe_name' => $threat['pppoe_name'],
+                'attack_type' => 'demo attacker',
+                'status' => 'unresolved',
+                'event_count' => 1,
+                'first_detected_at' => now(),
+                'last_detected_at' => now(),
+            ]);
 
             $log = IntrusionLog::create([
+                'incident_id' => $incident->id,
                 'src_ip' => $threat['src_ip'],
+                'pppoe_name' => $threat['pppoe_name'],
                 'dst_ip' => $threat['dst_ip'],
                 'src_port' => 49512,
                 'dst_port' => 80,
@@ -198,18 +202,4 @@ class ManageThreatController extends Controller
             ->with('success', 'Dummy attacker threats added to the threats list.');
     }
 
-    private function resolveGroupStatus($items): ?string
-    {
-        $statuses = $items->pluck('status')->filter()->values();
-
-        if ($statuses->contains('blocked')) {
-            return 'blocked';
-        }
-
-        if ($statuses->contains('resolved')) {
-            return 'resolved';
-        }
-
-        return null;
-    }
 }

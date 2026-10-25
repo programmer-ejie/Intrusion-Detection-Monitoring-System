@@ -304,8 +304,11 @@
                         <th>#</th>
                         <th>Timestamp</th>
                         <th>Src IP</th>
+                        @if($hasPppoeName)
+                        <th>PPPoE User</th>
+                        @endif
                         <th>Dst IP</th>
-                        <th>Protocol</th>
+                        <th>Flow Protocol</th>
                         <th>Type</th>
                         <th>Events</th>
                         <th>Risk Level</th>
@@ -322,8 +325,29 @@
                         $noValue = '<span class="no-value-pill">No Value</span>';
                         $timestamp = optional($threat->created_at)->toDateTimeString();
                         $srcIp = filled($threat->src_ip) ? e($threat->src_ip) : $noValue;
+                        $pppoeName = filled($threat->pppoe_name) ? e($threat->pppoe_name) : $noValue;
                         $dstIp = filled($threat->dst_ip) ? e($threat->dst_ip) : $noValue;
-                        $protocol = filled($threat->protocol) ? e($threat->protocol) : $noValue;
+                        $protocolNames = [
+                          1 => 'ICMP',
+                          2 => 'IGMP',
+                          4 => 'IP-in-IP',
+                          6 => 'TCP',
+                          17 => 'UDP',
+                          41 => 'IPv6',
+                          47 => 'GRE',
+                          50 => 'IPsec ESP',
+                          51 => 'IPsec AH',
+                          58 => 'ICMPv6',
+                          89 => 'OSPF',
+                          103 => 'PIM',
+                          112 => 'VRRP',
+                          115 => 'L2TP',
+                          132 => 'SCTP',
+                          136 => 'UDP-Lite',
+                        ];
+                        $protocol = filled($threat->protocol)
+                          ? e($protocolNames[$threat->protocol] ?? $threat->protocol)
+                          : $noValue;
                         $displayType = 'Threat';
                         if ($typeColumn) {
                           if ($typeColumn === 'is_malicious') {
@@ -348,9 +372,12 @@
                         }
                       @endphp
                       <tr>
-                        <td>{{ $threat->id }}</td>
+                        <td>{{ $threat->incident_id }}</td>
                         <td>{{ $timestamp ?? 'No Value' }}</td>
                         <td><strong>{!! $srcIp !!}</strong></td>
+                        @if($hasPppoeName)
+                        <td><strong>{!! $pppoeName !!}</strong></td>
+                        @endif
                         <td>{!! $dstIp !!}</td>
                         <td>{!! $protocol !!}</td>
                         <td class="text-danger">{{ $displayType ?: 'No Value' }}</td>
@@ -365,31 +392,32 @@
                         <td>{!! $displayNotes !!}</td>
                         @endif
                         <td>
-                          @if($statusText === 'Unresolved')
+                          @if($statusText === 'Unresolved' && filled($threat->pppoe_name))
                           <div class="d-flex">
-                            <button type="button" class="btn btn-sm btn-danger ms-auto" data-bs-toggle="modal" data-bs-target="#blockModal{{ $threat->id }}">
+                            <button type="button" class="btn btn-sm btn-danger ms-auto" data-bs-toggle="modal" data-bs-target="#blockModal{{ $threat->incident_id }}">
                               <i class="bx bx-block"></i>
                               <span class="d-none d-sm-inline"> Block</span>
                             </button>
                           </div>
 
                           <!-- Block Modal -->
-                          <div class="modal fade" id="blockModal{{ $threat->id }}" tabindex="-1" aria-labelledby="blockModalLabel{{ $threat->id }}" aria-hidden="true">
+                          <div class="modal fade" id="blockModal{{ $threat->incident_id }}" tabindex="-1" aria-labelledby="blockModalLabel{{ $threat->incident_id }}" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered">
                               <div class="modal-content">
                                 <div class="modal-header">
-                                  <h5 class="modal-title" id="blockModalLabel{{ $threat->id }}">Block IP Address</h5>
+                                  <h5 class="modal-title" id="blockModalLabel{{ $threat->incident_id }}">Block PPPoE Subscriber</h5>
                                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body text-start">
-                                  <p>Are you sure you want to <strong>block</strong> destination IP address <strong class="text-danger">{{ $threat->dst_ip }}</strong>?</p>
-                                  <p class="text-muted mb-0">This will mark all threats for this destination IP as blocked so your local Python agent can sync them to MikroTik.</p>
+                                  <p>Are you sure you want to block subscriber <strong class="text-danger">{{ $threat->pppoe_name ?: ($threat->src_ip ?: 'Unknown') }}</strong>?</p>
+                                  <p class="mb-1">Observed IP: <strong>{{ $threat->src_ip ?: 'Unknown' }}</strong></p>
+                                  <p class="text-muted mb-0">The local agent will resolve the subscriber's current PPPoE address before applying the MikroTik rule.</p>
                                 </div>
                                 <div class="modal-footer">
                                   <button type="button" class="btn btn-danger btn-sm btn-text-hide" data-bs-dismiss="modal">
                                     <i class="bx bx-x"></i><span class="d-none d-sm-inline"> Cancel</span>
                                   </button>
-                                  <form method="POST" action="{{ route('admin.threat.block', $threat->id) }}" style="display:inline;">
+                                  <form method="POST" action="{{ route('admin.threat.block', $threat->incident_id) }}" style="display:inline;">
                                     @csrf
                                     <button type="submit" class="btn btn-success btn-sm btn-text-hide">
                                       <i class="bx bx-check"></i><span class="d-none d-sm-inline"> Block</span>
@@ -399,31 +427,33 @@
                               </div>
                             </div>
                           </div>
-                          @elseif($statusText === 'Blocked')
+                          @elseif($statusText === 'Unresolved')
+                          <span class="text-muted" title="A PPPoE identity is required before this subscriber can be blocked safely.">PPPoE unavailable</span>
+                          @elseif($statusText === 'Blocked' && filled($threat->pppoe_name))
                           <div class="d-flex justify-content-center">
-                            <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#restoreModal{{ $threat->id }}">
+                            <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#restoreModal{{ $threat->incident_id }}">
                               <i class="bx bx-reset"></i>
                               <span class="d-none d-sm-inline"> Restore</span>
                             </button>
                           </div>
 
                           <!-- Restore Modal -->
-                          <div class="modal fade" id="restoreModal{{ $threat->id }}" tabindex="-1" aria-labelledby="restoreModalLabel{{ $threat->id }}" aria-hidden="true">
+                          <div class="modal fade" id="restoreModal{{ $threat->incident_id }}" tabindex="-1" aria-labelledby="restoreModalLabel{{ $threat->incident_id }}" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered">
                               <div class="modal-content">
                                 <div class="modal-header">
-                                  <h5 class="modal-title" id="restoreModalLabel{{ $threat->id }}">Restore Internet Access</h5>
+                                  <h5 class="modal-title" id="restoreModalLabel{{ $threat->incident_id }}">Restore Internet Access</h5>
                                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body text-start">
-                                  <p>Are you sure you want to <strong>restore</strong> access for destination IP <strong class="text-danger">{{ $threat->dst_ip }}</strong>?</p>
-                                  <p class="text-muted mb-0">This will mark the threat as resolved so your local Python agent can remove the MikroTik block rule.</p>
+                                  <p>Are you sure you want to restore subscriber <strong class="text-danger">{{ $threat->pppoe_name ?: ($threat->src_ip ?: 'Unknown') }}</strong>?</p>
+                                  <p class="text-muted mb-0">The local agent will remove every MikroTik rule owned by this PPPoE subscriber.</p>
                                 </div>
                                 <div class="modal-footer">
                                   <button type="button" class="btn btn-danger btn-sm btn-text-hide" data-bs-dismiss="modal">
                                     <i class="bx bx-x"></i><span class="d-none d-sm-inline"> Cancel</span>
                                   </button>
-                                  <form method="POST" action="{{ route('admin.threat.ignore', $threat->id) }}" style="display:inline;">
+                                  <form method="POST" action="{{ route('admin.threat.ignore', $threat->incident_id) }}" style="display:inline;">
                                     @csrf
                                     <button type="submit" class="btn btn-success btn-sm btn-text-hide">
                                       <i class="bx bx-check"></i><span class="d-none d-sm-inline"> Restore</span>
@@ -433,6 +463,8 @@
                               </div>
                             </div>
                           </div>
+                          @elseif($statusText === 'Blocked')
+                          <span class="text-muted">Legacy block</span>
                           @else
                           <span class="text-muted">-</span>
                           @endif
@@ -440,7 +472,7 @@
                       </tr>
                       @empty
                       <tr>
-                        <td colspan="{{ $hasNotes ? 11 : 10 }}" class="text-center text-muted">No threats found</td>
+                        <td colspan="{{ 10 + ($hasNotes ? 1 : 0) + ($hasPppoeName ? 1 : 0) }}" class="text-center text-muted">No threats found</td>
                       </tr>
                       @endforelse
                     </tbody>
@@ -463,7 +495,7 @@
                     @csrf
                     <div class="modal-body text-start">
                       <p class="text-muted mb-4">
-                        The PPPoE name and source IP are fixed for each demo row. Edit only the destination IP before seeding.
+                        The PPPoE username is the stable blocking identity. Edit only the destination IP before seeding.
                       </p>
 
                       @php
@@ -485,9 +517,9 @@
                               <label class="form-label">Destination IP</label>
                               <input
                                 type="text"
-                                name="{{ $target['src_ip'] === '10.0.70.2' ? 'dst_ip_jimson' : 'dst_ip_jimson2' }}"
+                                name="{{ $target['pppoe_name'] === 'jimson' ? 'dst_ip_jimson' : 'dst_ip_jimson2' }}"
                                 class="form-control"
-                                value="{{ old($target['src_ip'] === '10.0.70.2' ? 'dst_ip_jimson' : 'dst_ip_jimson2', $target['dst_ip']) }}"
+                                value="{{ old($target['pppoe_name'] === 'jimson' ? 'dst_ip_jimson' : 'dst_ip_jimson2', $target['dst_ip']) }}"
                                 placeholder="10.0.70.9"
                                 required
                               />

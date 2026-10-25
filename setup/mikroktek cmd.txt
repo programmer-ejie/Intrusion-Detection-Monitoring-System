@@ -1,0 +1,8 @@
+check existing block rule
+            /ip firewall filter print detail where comment~"IDS block pppoe:"
+
+to remove specific pppoe rule
+            /ip firewall filter remove [find where comment="IDS block pppoe:jimson"]
+
+to remove all block rules to all user
+            /ip firewall filter remove [find where comment~"IDS block pppoe:"]

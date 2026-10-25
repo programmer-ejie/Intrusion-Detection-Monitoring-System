@@ -24,3 +24,5 @@ Homestead.yaml
 Thumbs.db
 commands.txt
 setup/data/model/ids_ensemble.joblib
+/.venv-ids/
+/setup/Training/Dataset/

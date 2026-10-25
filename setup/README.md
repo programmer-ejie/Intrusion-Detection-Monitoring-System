@@ -11,7 +11,7 @@ This folder contains the local Python services used by the intrusion detection s
   Collects NetFlow data from MikroTik and sends feature payloads to the local detector.
 
 - `Pending Blocker.py`  
-  Polls the database every 20 seconds, keeps `blocked` destination IPs synced on MikroTik, and removes `resolved` destination IPs from the MikroTik firewall.
+  Polls the database every 20 seconds, resolves blocked PPPoE usernames to their current addresses, and removes subscriber-owned rules when restored.
 
 - `.env`  
   Shared environment settings for the local Python scripts.
@@ -46,12 +46,19 @@ It opens one console window per service.
 
 ## Status Flow
 
-- `NULL` = unresolved
-- `blocked` = MikroTik block should be applied
-- `resolved` = manually cleared and eligible for unblocking
+- `unresolved` = a new incident awaiting an administrator action
+- `blocked` = the subscriber is continuously reconciled to a MikroTik block rule
+- `resolved` = internet access was restored and the incident remains in history
+
+Threat status is stored in `threat_incidents`. Individual detections reference an
+incident through `intrusion_logs.incident_id`. Matching detections are grouped for
+15 minutes by default; a detection after a resolved incident always creates a new
+unresolved incident. Set `INCIDENT_WINDOW_MINUTES` in `setup/.env` to change the
+grouping window.
 
 ## Notes
 
 - The detector writes directly to the Hostinger database configured in `.env`.
 - Laravel reads the same database, so the dashboard updates automatically.
-- For MikroTik blocking to actually cut internet access, the pending blocker now creates a direct firewall drop rule per blocked destination IP.
+- Firewall rules are owned by stable PPPoE usernames and reconciled when a subscriber's dynamic address changes.
+- Run `php artisan migrate --force` after deploying incident-tracking updates, then restart all three local services.

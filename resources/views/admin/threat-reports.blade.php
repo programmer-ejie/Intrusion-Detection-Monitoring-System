@@ -212,7 +212,7 @@
                             </tr>
                           </thead>
                           <tbody id="reports-tbody">
-                            @foreach($rows as $r)
+                            @forelse($rows as $r)
                             <tr>
                               <td>{{ $r->created_at }}</td>
                               <td>{{ $r->src_ip }}</td>
@@ -222,10 +222,17 @@
                               <td>{{ $r->tot_fwd_pkts }}</td>
                               <td>{{ $r->flow_bytes_s }}</td>
                             </tr>
-                            @endforeach
+                            @empty
+                            <tr>
+                              <td colspan="7" class="text-center text-muted">No reports found</td>
+                            </tr>
+                            @endforelse
                           </tbody>
                         </table>
                       </div>
+                    </div>
+                    <div class="card-footer d-flex justify-content-center">
+                      {{ $rows->links('pagination::bootstrap-5') }}
                     </div>
                   </div>
                 </div>

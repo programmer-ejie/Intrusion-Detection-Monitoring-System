@@ -111,7 +111,7 @@
               <div class="navbar-nav align-items-center">
                 <div class="nav-item d-flex align-items-center">
                   <i class="bx bx-search fs-4 lh-0"></i>
-                  <input id="navbar-search" type="text" class="form-control border-0 shadow-none" placeholder="src/dst/protocol/notes..." aria-label="Search..." />
+                  <input id="navbar-search" type="text" class="form-control border-0 shadow-none" placeholder="pppoe/src/dst/protocol/notes..." aria-label="Search..." />
                 </div>
               </div>
               <ul class="navbar-nav flex-row align-items-center ms-auto">
@@ -170,7 +170,7 @@
                     </div>
                     {{-- <div class="col-md-4">
                       <label for="q" class="form-label small">Search</label>
-                      <input type="text" id="q" name="q" value="{{ request('q') }}" class="form-control" placeholder="src/dst/protocol/notes..." />
+                      <input type="text" id="q" name="q" value="{{ request('q') }}" class="form-control" placeholder="pppoe/src/dst/protocol/notes..." />
                     </div> --}}
                   <div class="col-md-2 d-flex gap-2">
                         <button type="submit" class="btn btn-primary">Filter</button>
@@ -186,9 +186,12 @@
                       <tr>
                         <th>#</th>
                         <th>Timestamp</th>
+                        @if($hasPppoeName)
+                        <th>PPPoE Name</th>
+                        @endif
                         <th>Src IP</th>
                         <th>Dst IP</th>
-                        <th>Protocol</th>
+                        <th>Flow Protocol</th>
                         <th>Type</th>
                         @if($hasNotes)
                         <th>Notes</th>
@@ -198,6 +201,24 @@
                     <tbody>
                       @forelse($logs as $log)
                       @php
+                        $protocolNames = [
+                          1 => 'ICMP',
+                          2 => 'IGMP',
+                          4 => 'IP-in-IP',
+                          6 => 'TCP',
+                          17 => 'UDP',
+                          41 => 'IPv6',
+                          47 => 'GRE',
+                          50 => 'IPsec ESP',
+                          51 => 'IPsec AH',
+                          58 => 'ICMPv6',
+                          89 => 'OSPF',
+                          103 => 'PIM',
+                          112 => 'VRRP',
+                          115 => 'L2TP',
+                          132 => 'SCTP',
+                          136 => 'UDP-Lite',
+                        ];
                         $displayType = 'Normal';
                         $isAttack = false;
                         if ($typeColumn) {
@@ -223,9 +244,12 @@
                       <tr>
                         <td>{{ $log->id }}</td>
                         <td>{{ optional($log->created_at)->toDateTimeString() ?? '-' }}</td>
+                        @if($hasPppoeName)
+                        <td>{{ $log->pppoe_name ?: '-' }}</td>
+                        @endif
                         <td>{{ $log->src_ip ?? '-' }}</td>
                         <td>{{ $log->dst_ip ?? '-' }}</td>
-                        <td>{{ $log->protocol ?? '-' }}</td>
+                        <td>{{ $protocolNames[$log->protocol] ?? $log->protocol ?? '-' }}</td>
                         <td class="{{ $typeClass }}">{{ $displayType }}</td>
                         @if($hasNotes)
                         <td>{{ $log->notes ?? '-' }}</td>
@@ -233,7 +257,7 @@
                       </tr>
                       @empty
                       <tr>
-                        <td colspan="{{ $hasNotes ? 7 : 6 }}" class="text-center text-muted">No logs found</td>
+                        <td colspan="{{ 6 + ($hasNotes ? 1 : 0) + ($hasPppoeName ? 1 : 0) }}" class="text-center text-muted">No logs found</td>
                       </tr>
                       @endforelse
                     </tbody>

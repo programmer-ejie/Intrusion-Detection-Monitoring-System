@@ -10,7 +10,7 @@ class LogController extends Controller
 {
     public function gotoLogs(Request $request)
     {
-        $perPage = 3;
+        $perPage = 10;
         $query = IntrusionLog::query()->whereNull('status');
 
         if ($request->filled('date')) {
@@ -45,7 +45,7 @@ class LogController extends Controller
             }
         }
 
-        $possibleSearchCols = ['src_ip', 'dst_ip', 'protocol', 'notes', 'payload', 'info', 'src_port', 'dst_port'];
+        $possibleSearchCols = ['pppoe_name', 'src_ip', 'dst_ip', 'protocol', 'notes', 'payload', 'info', 'src_port', 'dst_port'];
         $searchCols = array_values(array_intersect($possibleSearchCols, $allCols));
         if (count($searchCols) === 0) {
             $fallback = array_diff($allCols, ['id', 'created_at', 'updated_at']);
@@ -68,7 +68,8 @@ class LogController extends Controller
         $logs = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
 
         $hasNotes = in_array('notes', $allCols, true);
+        $hasPppoeName = in_array('pppoe_name', $allCols, true);
 
-        return view('admin.logs', compact('logs', 'typeColumn', 'searchCols', 'hasNotes'));
+        return view('admin.logs', compact('logs', 'typeColumn', 'searchCols', 'hasNotes', 'hasPppoeName'));
     }
 }

@@ -152,25 +152,26 @@ class MikroTikConnector:
             return False
 
     def get_pppoe_clients(self):
-        """Get PPPoE active clients from PPP section"""
+        """Return active PPPoE clients as {current_ip: stable_username}."""
         try:
             if not self.connected:
                 if not self.connect():
-                    return []
+                    return {}
             
             ppp_resource = self.api.get_resource('/ppp/active')
             active = ppp_resource.get()
             
-            clients = []
+            clients = {}
             for client in active:
                 address = client.get('address', '')
-                if address and is_client_ip(address):
-                    clients.append(address)
+                pppoe_name = str(client.get('name') or '').strip()
+                if address and pppoe_name and is_client_ip(address):
+                    clients[address] = pppoe_name
             
             return clients
         except Exception as e:
             logger.debug(f"Could not get PPPoE clients: {e}")
-            return []
+            return {}
 
     def disconnect(self):
         try:
@@ -199,6 +200,7 @@ class NetFlowCollector:
         
         # Client list from API
         self.pppoe_clients = set()
+        self.pppoe_name_by_ip = {}
         
         self.running = True
         
@@ -255,7 +257,16 @@ class NetFlowCollector:
 
     def update_client_list(self, api_clients):
         """Update client list from MikroTik API"""
-        self.pppoe_clients = set(api_clients)
+        self.pppoe_name_by_ip = dict(api_clients)
+        self.pppoe_clients = set(self.pppoe_name_by_ip)
+
+        # Remove expired dynamic addresses from round-robin state. If the same
+        # subscriber reconnects with a new address it will be queued below.
+        self.client_queue = deque(
+            address for address in self.client_queue
+            if address in self.pppoe_clients
+        )
+        self.analyzed_clients.intersection_update(self.pppoe_clients)
         
         # Add new clients to queue
         for client in self.pppoe_clients:
@@ -333,6 +344,8 @@ class NetFlowCollector:
         duration_seconds = total_duration / 1000 if total_duration > 0 else 1
         flow_bytes_s = total_bytes / duration_seconds
         flow_pkts_s = total_packets / duration_seconds
+        fwd_packets_s = fwd_packets / duration_seconds
+        bwd_packets_s = bwd_packets / duration_seconds
         
         # IAT means (Inter-Arrival Time)
         fwd_iat_mean = total_duration / max(fwd_packets, 1)
@@ -356,6 +369,7 @@ class NetFlowCollector:
         payload = {
             # Source/Destination info
             "src_ip": client_ip,
+            "pppoe_name": self.pppoe_name_by_ip.get(client_ip),
             "dst_ip": latest_flow.get('dst_ip'),
             "src_port": latest_flow.get('src_port'),
             "dst_port": latest_flow.get('dst_port'),
@@ -365,16 +379,28 @@ class NetFlowCollector:
             "flow_duration": float(total_duration * 1000),  # microseconds
             "flow_pkts_s": float(flow_pkts_s),
             "flow_bytes_s": float(flow_bytes_s),
+            "destination_port": int(latest_flow.get('dst_port') or 0),
+            "flow_packets_s": float(flow_pkts_s),
+            "fwd_packets_s": float(fwd_packets_s),
+            "bwd_packets_s": float(bwd_packets_s),
             
             # Packet counts - NOW WITH BOTH DIRECTIONS!
             "tot_fwd_pkts": int(fwd_packets),
             "tot_bwd_pkts": int(bwd_packets),
             "tot_fwd_bytes": int(fwd_bytes),
             "tot_bwd_bytes": int(bwd_bytes),
+            "total_fwd_packets": int(fwd_packets),
+            "total_backward_packets": int(bwd_packets),
+            "total_length_of_fwd_packets": int(fwd_bytes),
+            "total_length_of_bwd_packets": int(bwd_bytes),
             
             # Packet length means
             "fwd_pkt_len_mean": float(fwd_len_mean),
             "bwd_pkt_len_mean": float(bwd_len_mean),
+            "fwd_packet_length_mean": float(fwd_len_mean),
+            "bwd_packet_length_mean": float(bwd_len_mean),
+            "down_up_ratio": float(bwd_packets / max(fwd_packets, 1)),
+            "average_packet_size": float(total_bytes / max(total_packets, 1)),
             
             # IAT means
             "fwd_iat_mean": float(fwd_iat_mean),

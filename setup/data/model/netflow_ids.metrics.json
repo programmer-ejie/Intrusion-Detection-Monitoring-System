@@ -1,0 +1,139 @@
+{
+  "run_type": "full",
+  "schema_version": "mikrotik-netflow-v1",
+  "threshold": 0.9865455953940052,
+  "confusion_matrix": [
+    [
+      340751,
+      214
+    ],
+    [
+      3537,
+      80110
+    ]
+  ],
+  "classification_report": {
+    "0": {
+      "precision": 0.989726624221582,
+      "recall": 0.9993723695980525,
+      "f1-score": 0.9945261093348005,
+      "support": 340965.0
+    },
+    "1": {
+      "precision": 0.9973357900502963,
+      "recall": 0.9577151601372434,
+      "f1-score": 0.9771240036347891,
+      "support": 83647.0
+    },
+    "accuracy": 0.9911660527728844,
+    "macro avg": {
+      "precision": 0.9935312071359391,
+      "recall": 0.978543764867648,
+      "f1-score": 0.9858250564847948,
+      "support": 424612.0
+    },
+    "weighted avg": {
+      "precision": 0.9912256018625211,
+      "recall": 0.9911660527728844,
+      "f1-score": 0.9910979586101651,
+      "support": 424612.0
+    }
+  },
+  "balanced_validation": {
+    "seed": 42,
+    "requested_samples": 200,
+    "complete_200_sample_validation": true,
+    "samples": 200,
+    "benign_samples": 100,
+    "attack_samples": 100,
+    "confusion_matrix": [
+      [
+        100,
+        0
+      ],
+      [
+        3,
+        97
+      ]
+    ],
+    "classification_report": {
+      "0": {
+        "precision": 0.970873786407767,
+        "recall": 1.0,
+        "f1-score": 0.9852216748768473,
+        "support": 100.0
+      },
+      "1": {
+        "precision": 1.0,
+        "recall": 0.97,
+        "f1-score": 0.9847715736040609,
+        "support": 100.0
+      },
+      "accuracy": 0.985,
+      "macro avg": {
+        "precision": 0.9854368932038835,
+        "recall": 0.985,
+        "f1-score": 0.9849966242404541,
+        "support": 200.0
+      },
+      "weighted avg": {
+        "precision": 0.9854368932038835,
+        "recall": 0.985,
+        "f1-score": 0.984996624240454,
+        "support": 200.0
+      }
+    },
+    "attack_family_report": {
+      "DDOS": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 30.0
+      },
+      "DOS GOLDENEYE": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 1.0
+      },
+      "DOS HULK": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 45.0
+      },
+      "PORTSCAN": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 23.0
+      },
+      "SSH-PATATOR": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 1.0
+      },
+      "accuracy": 1.0,
+      "macro avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 100.0
+      },
+      "weighted avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 100.0
+      }
+    },
+    "probability_summary": {
+      "benign_min": 0.0,
+      "benign_max": 0.8981170847114343,
+      "attack_min": 0.7604789501149498,
+      "attack_max": 0.9999752943932224
+    }
+  },
+  "warning": "CICIDS bootstrap metrics are not production validation. Test with labeled MikroTik NetFlow captures before deployment."
+}

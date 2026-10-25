@@ -38,7 +38,8 @@ class ThreatReportsController extends Controller
 
         $latest = (clone $query)->whereNull('status')->orderByDesc('created_at')->first();
 
-        $rows = (clone $query)->whereNull('status')->orderByDesc('created_at')->limit(50)->get();
+        $rows = (clone $query)->whereNull('status')->orderByDesc('created_at')->orderByDesc('id')
+            ->paginate(10)->withQueryString();
 
         return view('admin.threat-reports', [
             'window' => $window,
