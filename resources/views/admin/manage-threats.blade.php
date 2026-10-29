@@ -289,10 +289,12 @@
                     <div class="threats-actions">
                       <button type="submit" class="btn btn-primary">Filter</button>
                       <a href="{{ route('admin.manage-threats') }}" class="btn btn-outline-secondary">Reset</a>
+                      @if(session("user")?->canManageThreats())
                       <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#seedDemoModal">
                         <i class="bx bx-bug me-1"></i>
                         Seed Demo Threats
                       </button>
+                      @endif
                     </div>
                   </form>
                 </div>
@@ -316,7 +318,9 @@
                         @if($hasNotes)
                         <th>Notes</th>
                         @endif
+                        @if(session("user")?->canManageThreats())
                         <th>Actions</th>
+                        @endif
                       </tr>
                     </thead>
                     <tbody>
@@ -391,6 +395,7 @@
                         @if($hasNotes)
                         <td>{!! $displayNotes !!}</td>
                         @endif
+                        @if(session("user")?->canManageThreats())
                         <td>
                           @if($statusText === 'Unresolved' && filled($threat->pppoe_name))
                           <div class="d-flex">
@@ -469,10 +474,11 @@
                           <span class="text-muted">-</span>
                           @endif
                         </td>
+                        @endif
                       </tr>
                       @empty
                       <tr>
-                        <td colspan="{{ 10 + ($hasNotes ? 1 : 0) + ($hasPppoeName ? 1 : 0) }}" class="text-center text-muted">No threats found</td>
+                        <td colspan="{{ 9 + (session("user")?->canManageThreats() ? 1 : 0) + ($hasNotes ? 1 : 0) + ($hasPppoeName ? 1 : 0) }}" class="text-center text-muted">No threats found</td>
                       </tr>
                       @endforelse
                     </tbody>
@@ -484,6 +490,7 @@
               </div>
             </div>
 
+            @if(session("user")?->canManageThreats())
             <div class="modal fade" id="seedDemoModal" tabindex="-1" aria-labelledby="seedDemoModalLabel" aria-hidden="true">
               <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
@@ -540,6 +547,7 @@
               </div>
             </div>
 
+            @endif
             <div class="content-backdrop fade"></div>
           </div>
           <footer class="content-footer footer bg-footer-theme border-top">

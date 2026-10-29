@@ -22,7 +22,18 @@ class CheckSession
             return redirect()->route('login')->with('message', 'Session expired. Please login again.');
         }
 
-        // Session exists, proceed
+        // Reload permissions so role changes also apply to existing sessions.
+        $user = \App\Models\UsersAccount::find(session('user')->id);
+        if (! $user) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login');
+        }
+        session(['user' => $user]);
+
+        abort_if(! $request->isMethodSafe() && ! $user->canManageThreats(), 403, 'This account has view-only access.');
+
         return $next($request);
     }
 }

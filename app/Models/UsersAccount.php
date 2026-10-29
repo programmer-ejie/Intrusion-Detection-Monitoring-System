@@ -27,6 +27,7 @@ class UsersAccount extends Model
         'sex',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -46,6 +47,11 @@ class UsersAccount extends Model
     protected $casts = [
         'age' => 'integer',
     ];
+
+    public function canManageThreats(): bool
+    {
+        return $this->role === 'admin';
+    }
 
     /**
      * Accessor for `name` so views can use `$user->name`.
