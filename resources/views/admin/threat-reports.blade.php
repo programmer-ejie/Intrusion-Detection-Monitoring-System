@@ -52,7 +52,7 @@
               <span class="app-brand-logo demo">
                 <img src="{{ asset('images/logo.png') }}" alt="logo" width="60" height="50" />
               </span>
-              <span class="app-brand-text demo menu-text fw-bolder text-uppercase cooper-brand" style="color: rgb(88, 103, 143)">IDSMS</span>
+              <span class="app-brand-text demo menu-text fw-bolder text-uppercase cooper-brand" style="color: rgb(88, 103, 143)">IDMS</span>
             </a>
 
             <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">

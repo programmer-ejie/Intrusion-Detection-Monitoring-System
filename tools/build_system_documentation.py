@@ -375,6 +375,8 @@ def read(path):
 
 
 def scrub(text):
+    # Normalize the project name in published extracts while preserving source manuscripts.
+    text = re.sub(r'\bIDSMS\b', 'IDMS', text, flags=re.IGNORECASE)
     # Historical documents may contain addresses and access settings. Never publish private assignments.
     text = re.sub(r'(?im)^.*(?:password|secret|api[_ -]?key|auth[_ -]?token)\s*[:=].*$', '[Private credential assignment omitted.]', text)
     text = re.sub(r'(?i)\b(?:mysql|postgres|https?)://[^\s/:]+:[^\s@]+@[^\s]+', '[Credential-bearing connection URL omitted]', text)
@@ -539,7 +541,7 @@ with zipfile.ZipFile(ROOT/'setup/ids_ensemble-api-main.zip') as archive:
     section('Archived API member inventory','\n\n'.join(facts),2)
 
 section('24. Historical research manuscripts: text extracts', '''
-The following extracts preserve text from the project-owned Word manuscripts found in setup/Training so the documentation includes the original rationale, literature discussion, methodology ideas, and evaluation claims as well as the current implementation. Their claims are historical manuscript claims and have not been independently verified. They can conflict with active source and checked-in metrics. The current-source chapters must be used to describe what this project revision actually implements. Private email addresses and credential assignments are omitted. Tables are flattened into sentences so this remains a text-only reference; embedded figures and images are not reproduced.
+The following extracts preserve text from the project-owned Word manuscripts found in setup/Training so the documentation includes the original rationale, literature discussion, methodology ideas, and evaluation claims as well as the current implementation. Their claims are historical manuscript claims and have not been independently verified. They can conflict with active source and checked-in metrics. The current-source chapters must be used to describe what this project revision actually implements. The project abbreviation is normalized to IDMS in these published extracts; original manuscripts remain historical source material. Private email addresses and credential assignments are omitted. Tables are flattened into sentences so this remains a text-only reference; embedded figures and images are not reproduced.
 ''')
 for path in sorted((ROOT/'setup/Training').glob('*.docx')):
     doc=Document(path)

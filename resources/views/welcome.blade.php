@@ -44,7 +44,7 @@
               <span class="app-brand-logo demo">
                 <img src="{{ asset('images/logo.png') }}" alt="logo" width="60px" height="50px" style="margin-right: 0.35rem; vertical-align: middle;" />
               </span>
-              <span class="app-brand-text demo menu-text fw-bolder text-uppercase" style="color: rgb(88, 103, 143); text-decoration: none; font-size: 1.4rem; vertical-align: middle; border: none;">IDSMS</span>
+              <span class="app-brand-text demo menu-text fw-bolder text-uppercase" style="color: rgb(88, 103, 143); text-decoration: none; font-size: 1.4rem; vertical-align: middle; border: none;">IDMS</span>
             </a>
           
           <div class="offcanvas offcanvas-start w-75" id="fbs__net-navbars" tabindex="-1" aria-labelledby="fbs__net-navbarsLabel">
@@ -57,7 +57,7 @@
               <span class="app-brand-logo demo">
                 <img src="{{ asset('images/logo.png') }}" alt="logo" width="60px" height="50px" style="margin-right: 0.35rem; vertical-align: middle;" />
               </span>
-              <span class="app-brand-text demo menu-text fw-bolder text-uppercase" style="color: rgb(88, 103, 143); text-decoration: none; font-size: 1.4rem; vertical-align: middle; border: none;">IDSMS</span>
+              <span class="app-brand-text demo menu-text fw-bolder text-uppercase" style="color: rgb(88, 103, 143); text-decoration: none; font-size: 1.4rem; vertical-align: middle; border: none;">IDMS</span>
             </a>
                 
               </div>
@@ -214,7 +214,7 @@
           <div class="container">
             <div class="row mb-5">
               <div class="col-md-8 mx-auto text-center"><span class="subtitle text-uppercase mb-3" data-aos="fade-up" data-aos-delay="0">Key Capabilities</span>
-                <h2 class="mb-3" data-aos="fade-up" data-aos-delay="100">What IDSMS Provides</h2>
+                <h2 class="mb-3" data-aos="fade-up" data-aos-delay="100">What IDMS Provides</h2>
               </div>
             </div>
             <div class="row g-4">
@@ -426,9 +426,9 @@
               <div class="row align-items-center">
                 <div class="col-md-4 text-center text-md-start mb-2 mb-md-0">
                   <div class="d-flex align-items-center gap-2 justify-content-center justify-content-md-start">
-                    <img src="{{ asset('images/logo.png') }}" alt="IDSMS" style="width:36px;height:36px;border-radius:6px;object-fit:cover" />
+                    <img src="{{ asset('images/logo.png') }}" alt="IDMS" style="width:36px;height:36px;border-radius:6px;object-fit:cover" />
                     <div>
-                      <div class="fw-bold">IDSMS</div>
+                      <div class="fw-bold">IDMS</div>
                       <small class="text-muted d-block">Intrusion Detection Monitoring</small>
                     </div>
                   </div>
@@ -442,7 +442,7 @@
                 </div>
                 <div class="col-md-4 text-center text-md-end">
                   <div class="d-flex align-items-center justify-content-center justify-content-md-end gap-3">
-                    <small class="text-muted">© <script>document.write(new Date().getFullYear());</script> IDSMS</small>
+                    <small class="text-muted">© <script>document.write(new Date().getFullYear());</script> IDMS</small>
            
                     
                   </div>

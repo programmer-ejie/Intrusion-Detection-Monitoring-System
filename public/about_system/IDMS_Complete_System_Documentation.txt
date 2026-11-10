@@ -1499,7 +1499,7 @@ ids_ensemble-api-main/requirements.txt: 72 bytes. Historical API source or depen
 24. Historical research manuscripts: text extracts
 
 
-The following extracts preserve text from the project-owned Word manuscripts found in setup/Training so the documentation includes the original rationale, literature discussion, methodology ideas, and evaluation claims as well as the current implementation. Their claims are historical manuscript claims and have not been independently verified. They can conflict with active source and checked-in metrics. The current-source chapters must be used to describe what this project revision actually implements. Private email addresses and credential assignments are omitted. Tables are flattened into sentences so this remains a text-only reference; embedded figures and images are not reproduced.
+The following extracts preserve text from the project-owned Word manuscripts found in setup/Training so the documentation includes the original rationale, literature discussion, methodology ideas, and evaluation claims as well as the current implementation. Their claims are historical manuscript claims and have not been independently verified. They can conflict with active source and checked-in metrics. The current-source chapters must be used to describe what this project revision actually implements. The project abbreviation is normalized to IDMS in these published extracts; original manuscripts remain historical source material. Private email addresses and credential assignments are omitted. Tables are flattened into sentences so this remains a text-only reference; embedded figures and images are not reproduced.
 
 
 alpha_word.docx
@@ -1943,7 +1943,7 @@ Jimson A. Olaybar1, Patrick D. Cerna2
 
 [email address omitted]
 
-Abstract— The increasing complexity of modern network environments has heightened the need for practical and scalable intrusion detection solutions. This study presents the development of a real-time, flow-based Intrusion Detection and Security Management System (IDSMS) that integrates live traffic monitoring, machine learning-based intrusion analysis, centralized data storage, and web-based visualization. The system captures network traffic from a MikroTik-based gateway using a passive flow sniffer deployed on a Kali Linux monitoring node. Packets are aggregated into bidirectional flows and transformed into statistical feature vectors, which are analyzed by a machine learning inference service through an application programming interface. Detection results, including risk level and attack classification, are stored in a centralized database and presented through an interactive dashboard. Development-stage testing using simulated attack traffic demonstrates the system’s ability to capture, analyze, and visualize network threats in real time. The proposed system provides a practical foundation for deployment in shared-access networks, small enterprises, and IoT-enabled environments.
+Abstract— The increasing complexity of modern network environments has heightened the need for practical and scalable intrusion detection solutions. This study presents the development of a real-time, flow-based Intrusion Detection and Security Management System (IDMS) that integrates live traffic monitoring, machine learning-based intrusion analysis, centralized data storage, and web-based visualization. The system captures network traffic from a MikroTik-based gateway using a passive flow sniffer deployed on a Kali Linux monitoring node. Packets are aggregated into bidirectional flows and transformed into statistical feature vectors, which are analyzed by a machine learning inference service through an application programming interface. Detection results, including risk level and attack classification, are stored in a centralized database and presented through an interactive dashboard. Development-stage testing using simulated attack traffic demonstrates the system’s ability to capture, analyze, and visualize network threats in real time. The proposed system provides a practical foundation for deployment in shared-access networks, small enterprises, and IoT-enabled environments.
 
 Keywords— Intrusion Detection System, Flow-Based Analysis, Machine Learning, Network Security, Real-Time Monitoring
 
@@ -1955,7 +1955,7 @@ Recent studies emphasize the effectiveness of flow-based intrusion detection, wh
 
 Despite advances in detection models, many existing IDS studies focus primarily on offline datasets and lack full system integration, limiting their applicability in operational networks [4], [10]. Real-world deployment requires not only accurate models but also live traffic capture, scalable inference, centralized logging, and actionable security management interfaces. Furthermore, public-access networks such as pisonet or shared Wi-Fi services demand IDS solutions capable of identifying malicious client devices while preserving normal user traffic. Recent studies have demonstrated the feasibility of anomaly detection and traffic pattern analysis in real-world Pisonet environments using dynamic time warping and seasonal decomposition techniques [25], [26].
 
-To address these challenges, this study presents the development and implementation of a real-time flow-based Intrusion Detection and Security Management System (IDSMS). The proposed system integrates live network traffic capture, flow-level feature extraction, machine learning-based attack classification, and a web-based security management platform. The system is designed to operate with a MikroTik gateway and downstream routers, enabling visibility into client-generated traffic while supporting real-time detection and response.
+To address these challenges, this study presents the development and implementation of a real-time flow-based Intrusion Detection and Security Management System (IDMS). The proposed system integrates live network traffic capture, flow-level feature extraction, machine learning-based attack classification, and a web-based security management platform. The system is designed to operate with a MikroTik gateway and downstream routers, enabling visibility into client-generated traffic while supporting real-time detection and response.
 
 Unlike dataset-only approaches, this work emphasizes end-to-end system development, demonstrating how flow-based IDS concepts can be operationalized into a working security platform. The system architecture supports live monitoring, historical analysis, and threat management, providing a practical foundation for deployment in small enterprise networks, IoT environments, and public internet access services.
 
@@ -1971,7 +1971,7 @@ Beyond centralized learning, federated learning (FL) has emerged as a promising 
 
 Several studies have also proposed enhancement techniques to improve intrusion detection reliability, including data augmentation and improved feature encoding. Mohammad et al. explored deep learning combined with data augmentation to enhance IDS performance, supporting the importance of improving training robustness and generalization [14]. Alitbi et al. proposed a generalized real-time IDS using incremental feature encoding and similarity embedding, addressing real-time constraints while improving discrimination capability [15]. These contributions reinforce the direction of building models and representations that are more suitable for live deployment and continuous monitoring.
 
-Despite extensive research on flow-based IDS models, feature engineering, and learning strategies, many studies remain focused on algorithmic accuracy and offline experiments, with limited emphasis on full operational deployment. Practical deployment requires an integrated pipeline covering real-time flow capture, feature extraction consistency, scalable inference, centralized storage, and a management interface to support monitoring and response. The present work addresses this gap by developing an end-to-end Intrusion Detection and Security Management System (IDSMS) that connects live flow sniffing, machine learning inference via API, database logging, and a web-based dashboard for monitoring and threat management. By focusing on system development and implementation, this study complements model-centric IDS research and supports practical applicability in environments such as small enterprise networks and public-access Wi-Fi infrastructures. Recent work has further extended flow-based analysis to real-world scenarios, including Pisonet traffic analysis [25] and dynamic network traffic visualization using machine learning and seasonal decomposition [26].
+Despite extensive research on flow-based IDS models, feature engineering, and learning strategies, many studies remain focused on algorithmic accuracy and offline experiments, with limited emphasis on full operational deployment. Practical deployment requires an integrated pipeline covering real-time flow capture, feature extraction consistency, scalable inference, centralized storage, and a management interface to support monitoring and response. The present work addresses this gap by developing an end-to-end Intrusion Detection and Security Management System (IDMS) that connects live flow sniffing, machine learning inference via API, database logging, and a web-based dashboard for monitoring and threat management. By focusing on system development and implementation, this study complements model-centric IDS research and supports practical applicability in environments such as small enterprise networks and public-access Wi-Fi infrastructures. Recent work has further extended flow-based analysis to real-world scenarios, including Pisonet traffic analysis [25] and dynamic network traffic visualization using machine learning and seasonal decomposition [26].
 
 METHODOLOGY
 
@@ -1979,7 +1979,7 @@ The detection models integrated into the system are based on the previously deve
 
 System Architecture Overview
 
-The proposed IDSMS follows a modular, flow-based architecture composed of five primary components: (1) live traffic capture, (2) flow aggregation and feature extraction, (3) machine learning-based intrusion analysis, (4) centralized data storage, and (5) web-based visualization and threat management. Figure 1 illustrates the complete system workflow, from packet capture to security decision-making.
+The proposed IDMS follows a modular, flow-based architecture composed of five primary components: (1) live traffic capture, (2) flow aggregation and feature extraction, (3) machine learning-based intrusion analysis, (4) centralized data storage, and (5) web-based visualization and threat management. Figure 1 illustrates the complete system workflow, from packet capture to security decision-making.
 
 Figure 1. Overall System Architecture Diagram
 
@@ -1995,13 +1995,13 @@ Feature Extraction and Preprocessing
 
 For each completed flow, the system extracts a comprehensive set of approximately 78 statistical features, following best practices in flow-based IDS research [4], [7], [10]. These features capture temporal, volumetric, and directional characteristics of traffic, including flow duration, packet counts, byte rates, inter-arrival times, and forward–backward packet statistics.
 
-Figure 2. Runtime Data Processing Pipeline of the Proposed IDSMS
+Figure 2. Runtime Data Processing Pipeline of the Proposed IDMS
 
 Prior to analysis, flows are filtered to remove incomplete or insignificant traffic, such as flows with insufficient packet counts. Feature normalization is applied to ensure compatibility with the trained machine learning models and to prevent dominance of high-magnitude features during inference.
 
 Machine Learning Model Design and Training
 
-The intrusion detection engine integrated into the proposed IDSMS employs a two-stage ensemble machine learning architecture. Stage A performs binary classification to distinguish benign and malicious traffic using a calibrated stacking ensemble composed of Random Forest, Gradient Boosting, and XGBoost classifiers, with Logistic Regression as the meta-classifier. Stage B performs multi-class attack classification using a Random Forest classifier trained exclusively on malicious traffic samples.
+The intrusion detection engine integrated into the proposed IDMS employs a two-stage ensemble machine learning architecture. Stage A performs binary classification to distinguish benign and malicious traffic using a calibrated stacking ensemble composed of Random Forest, Gradient Boosting, and XGBoost classifiers, with Logistic Regression as the meta-classifier. Stage B performs multi-class attack classification using a Random Forest classifier trained exclusively on malicious traffic samples.
 
 The models were trained offline using the CIC-IDS2017 dataset, which contains realistic benign and attack traffic flows represented by 78 numerical flow-based features. Prior to training, feature normalization was applied using standard scaling, and identifier-based fields such as IP addresses and ports were removed to prevent information leakage.
 
@@ -2017,15 +2017,15 @@ Data Storage and Logging Mechanism
 
 All analyzed flows and prediction results are stored in a centralized database. Each record includes flow metadata, extracted statistical features, predicted risk classification, probability score, and timestamp. This persistent storage supports forensic analysis, trend evaluation, and system performance assessment.
 
-Figure 3 presents the database schema used by the proposed IDSMS. Captured network flows are stored with their extracted statistical features and corresponding prediction outputs. The schema supports traceability between observed traffic, model decisions, and logged security events, enabling real-time dashboard updates and retrospective forensic analysis. The ER diagram represents the logical data model; implementation may store selected fields in a consolidated logging table to simplify real-time insertion and dashboard querying.
+Figure 3 presents the database schema used by the proposed IDMS. Captured network flows are stored with their extracted statistical features and corresponding prediction outputs. The schema supports traceability between observed traffic, model decisions, and logged security events, enabling real-time dashboard updates and retrospective forensic analysis. The ER diagram represents the logical data model; implementation may store selected fields in a consolidated logging table to simplify real-time insertion and dashboard querying.
 
-Figure 3. Database Schema of the Proposed IDSMS
+Figure 3. Database Schema of the Proposed IDMS
 
 Flow-level logging aligns with recent IDS research advocating standardized and structured data storage to improve transparency and reproducibility [4], [12].
 
 Web-Based Visualization and Threat Management
 
-A web-based Intrusion Detection and Security Management System (IDSMS) provides real-time and historical insights into network activity. The dashboard displays key metrics such as total network flows, detected attacks, attack rate, and risk-level distribution. Visual components include time-series graphs, attack distribution charts, and top attacked IP summaries.
+A web-based Intrusion Detection and Security Management System (IDMS) provides real-time and historical insights into network activity. The dashboard displays key metrics such as total network flows, detected attacks, attack rate, and risk-level distribution. Visual components include time-series graphs, attack distribution charts, and top attacked IP summaries.
 
 Detected threats are presented with associated source IP addresses, destination IPs, protocol types, and attack classifications. Administrative controls enable operators to review, manage, and respond to threats, supporting practical deployment scenarios in public and enterprise networks.
 
@@ -2039,7 +2039,7 @@ SYSTEM ARCHITECTURE AND DESIGN
 
 Overall System Architecture
 
-The proposed Intrusion Detection and Security Management System (IDSMS) is designed using a modular and layered architecture to support real-time network monitoring, scalable analysis, and centralized security management. The architecture separates traffic acquisition, intrusion analysis, data storage, and visualization into independent components, ensuring flexibility, maintainability, and ease of deployment.
+The proposed Intrusion Detection and Security Management System (IDMS) is designed using a modular and layered architecture to support real-time network monitoring, scalable analysis, and centralized security management. The architecture separates traffic acquisition, intrusion analysis, data storage, and visualization into independent components, ensuring flexibility, maintainability, and ease of deployment.
 
 The system operates within a gateway-based network environment where client devices connect through routers and a MikroTik gateway. Traffic generated by client devices is passively observed by a dedicated monitoring node, enabling intrusion detection without disrupting normal network operations.
 
@@ -2089,7 +2089,7 @@ IMPLEMENTATION
 
 Development Environment and Tools
 
-The proposed Intrusion Detection and Security Management System (IDSMS) was implemented using a combination of networking hardware, virtualization tools, and open-source software frameworks. A MikroTik router running RouterOS served as the network gateway, while the intrusion monitoring component was deployed on a Kali Linux virtual machine hosted in a VMware environment. This setup enabled controlled experimentation while closely emulating real-world deployment conditions.
+The proposed Intrusion Detection and Security Management System (IDMS) was implemented using a combination of networking hardware, virtualization tools, and open-source software frameworks. A MikroTik router running RouterOS served as the network gateway, while the intrusion monitoring component was deployed on a Kali Linux virtual machine hosted in a VMware environment. This setup enabled controlled experimentation while closely emulating real-world deployment conditions.
 
 Python was selected as the primary programming language for system development due to its extensive support for network analysis, machine learning integration, and rapid prototyping. Supporting tools included packet capture libraries, HTTP communication modules, and database connectors, facilitating seamless interaction between system components.
 
@@ -2125,7 +2125,7 @@ Web-Based Dashboard Implementation
 
 A web-based security dashboard was developed to provide visualization and management capabilities. The dashboard displays real-time statistics such as total flows processed, detected attacks, attack rates, and risk-level distributions. Interactive tables allow administrators to inspect individual flow records and review detection results.
 
-Figure 7. Threat Reports module of the IDSMS showing summarized statistics and per-flow event records.
+Figure 7. Threat Reports module of the IDMS showing summarized statistics and per-flow event records.
 
 The interface was designed with development-stage validation in mind, emphasizing transparency and interpretability rather than automated enforcement. This approach allows system behavior to be closely monitored and verified before enabling active response mechanisms.
 
@@ -2139,7 +2139,7 @@ RESULTS AND DISCUSSION
 
 Overview of Development-Stage Results
 
-This section presents and discusses the results obtained during the development and functional testing phase of the proposed Intrusion Detection and Security Management System (IDSMS). The evaluation focuses on validating system functionality, data flow correctness, and integration performance rather than benchmarking detection accuracy against large-scale real-world datasets.
+This section presents and discusses the results obtained during the development and functional testing phase of the proposed Intrusion Detection and Security Management System (IDMS). The evaluation focuses on validating system functionality, data flow correctness, and integration performance rather than benchmarking detection accuracy against large-scale real-world datasets.
 
 The network traffic used in this phase consisted of a mixture of benign activities and intentionally generated attack traffic designed to test the system’s capability to capture, analyze, classify, and store flow-level information. The results demonstrate that the system operates as intended across all architectural layers, from live traffic capture to dashboard visualization.
 
@@ -2155,7 +2155,7 @@ Real-Time Monitoring Performance
 
 The real-time monitoring capability of the proposed system is shown in Figure 8. The Live Monitor interface displays current incoming flows, packet rates, and alert counters, and updates continuously as traffic is observed from the network. The interface provides immediate visibility into ongoing network activity, allowing the administrator to track traffic fluctuations and verify that the monitoring and flow capture components are operating correctly. During testing, changes in traffic volume were instantly reflected in the live chart and counters, confirming that the system is capable of processing and visualizing network data in real time. This real-time feedback is essential for operational environments, as it enables rapid situational awareness and supports timely detection of abnormal traffic behavior.
 
-Figure 8. Real-time monitoring interface of the proposed IDSMS showing live flow rate and packet activity.
+Figure 8. Real-time monitoring interface of the proposed IDMS showing live flow rate and packet activity.
 
 Feature Generation and Statistical Metrics
 
@@ -2177,11 +2177,11 @@ Detection Performance of the Integrated Machine Learning Engine
 
 The integrated two-stage ensemble detection engine, which was previously trained and evaluated using the CIC-IDS2017 dataset, achieved strong performance. In the present system, the trained model was integrated and validated at the functional level using simulated attack traffic. Stage A (binary classification) achieved an accuracy of 99.92% with a ROC-AUC score of 0.99987, indicating near-perfect separation between benign and malicious traffic. Stage B (multi-class classification) achieved an overall accuracy of 99.83% across fourteen attack categories.
 
-These results confirm that the machine learning component of the proposed IDSMS is not merely a conceptual module but a validated and high-performing detection engine suitable for real-time deployment. It should be noted that these quantitative performance results were obtained during offline training and evaluation of the detection models, while the present system-level experiments focus on validating real-time integration, data flow correctness, and operational functionality.
+These results confirm that the machine learning component of the proposed IDMS is not merely a conceptual module but a validated and high-performing detection engine suitable for real-time deployment. It should be noted that these quantitative performance results were obtained during offline training and evaluation of the detection models, while the present system-level experiments focus on validating real-time integration, data flow correctness, and operational functionality.
 
 Table 1. Detection Performance of the Integrated Machine Learning Engine
 
-Table 1 presents the performance of the two-stage ensemble machine learning engine integrated into the proposed IDSMS. Stage A, which performs binary classification between benign and malicious traffic, achieved an accuracy of 99.92% with a ROC-AUC score of 0.99987, indicating near-perfect discrimination capability. Stage B, which performs multi-class classification among fourteen attack types, achieved an overall accuracy of 99.83%, demonstrating that the system is not only effective at detecting malicious traffic but also reliable in identifying specific attack categories, making it suitable for real-time intrusion detection and security monitoring.
+Table 1 presents the performance of the two-stage ensemble machine learning engine integrated into the proposed IDMS. Stage A, which performs binary classification between benign and malicious traffic, achieved an accuracy of 99.92% with a ROC-AUC score of 0.99987, indicating near-perfect discrimination capability. Stage B, which performs multi-class classification among fourteen attack types, achieved an overall accuracy of 99.83%, demonstrating that the system is not only effective at detecting malicious traffic but also reliable in identifying specific attack categories, making it suitable for real-time intrusion detection and security monitoring.
 
 Database Logging and Data Integrity
 
@@ -2205,7 +2205,7 @@ Because the attack traffic was artificially generated for testing, the displayed
 
 Discussion of System Effectiveness
 
-The results confirm that the proposed IDSMS effectively integrates flow-based traffic monitoring, machine learning-based analysis, and centralized security management. The system demonstrates reliable end-to-end operation, from packet capture through prediction and visualization.
+The results confirm that the proposed IDMS effectively integrates flow-based traffic monitoring, machine learning-based analysis, and centralized security management. The system demonstrates reliable end-to-end operation, from packet capture through prediction and visualization.
 
 Compared to prior studies that focus primarily on offline datasets and isolated detection models [4], [10], this work emphasizes operational deployment and system integration. The development results indicate that the architecture is suitable for real-world environments, where continuous traffic monitoring and actionable insights are required.
 
@@ -2215,7 +2215,7 @@ CONCLUSION AND FUTURE WORK
 
 Conclusion
 
-This study presented the development and implementation of a real-time, flow-based Intrusion Detection and Security Management System (IDSMS) that integrates live network traffic monitoring, machine learning-based intrusion analysis, centralized data storage, and web-based visualization. Unlike many existing IDS studies that focus primarily on offline datasets and model accuracy, this work emphasized system-level design and operational deployment, demonstrating how flow-based intrusion detection can be implemented in a practical network environment.
+This study presented the development and implementation of a real-time, flow-based Intrusion Detection and Security Management System (IDMS) that integrates live network traffic monitoring, machine learning-based intrusion analysis, centralized data storage, and web-based visualization. Unlike many existing IDS studies that focus primarily on offline datasets and model accuracy, this work emphasized system-level design and operational deployment, demonstrating how flow-based intrusion detection can be implemented in a practical network environment.
 
 The system successfully captured live traffic from a MikroTik-based network, aggregated packets into bidirectional flows, extracted statistical features, and transmitted these features to a machine learning inference service for classification. The results were persistently stored in a database and presented through an interactive dashboard, enabling real-time monitoring and historical analysis. Development-stage testing using simulated attack traffic confirmed that the system components function cohesively and that intrusion events are correctly detected, logged, and visualized.
 
@@ -2311,7 +2311,7 @@ Jimson A. Olaybar1, Patrick D. Cerna2
 
 ABSTRACT
 
-The increasing complexity of modern network environments has heightened the need for practical and scalable intrusion detection solutions. This study presents the development of a real-time, flow-based Intrusion Detection and Security Management System (IDSMS) that integrates live traffic monitoring, machine learning-based intrusion analysis, centralized data storage, and web-based visualization. The system captures network traffic from a MikroTik-based gateway using a passive flow sniffer deployed on a Kali Linux monitoring node. Packets are aggregated into bidirectional flows and transformed into statistical feature vectors, which are analyzed by a machine learning inference service through an application programming interface. Detection results, including risk level and attack classification, are stored in a centralized database and presented through an interactive dashboard. Development-stage testing using simulated attack traffic demonstrates the system's ability to capture, analyze, and visualize network threats in real time. The proposed system provides a practical foundation for deployment in shared-access networks, small enterprises, and IoT-enabled environments.
+The increasing complexity of modern network environments has heightened the need for practical and scalable intrusion detection solutions. This study presents the development of a real-time, flow-based Intrusion Detection and Security Management System (IDMS) that integrates live traffic monitoring, machine learning-based intrusion analysis, centralized data storage, and web-based visualization. The system captures network traffic from a MikroTik-based gateway using a passive flow sniffer deployed on a Kali Linux monitoring node. Packets are aggregated into bidirectional flows and transformed into statistical feature vectors, which are analyzed by a machine learning inference service through an application programming interface. Detection results, including risk level and attack classification, are stored in a centralized database and presented through an interactive dashboard. Development-stage testing using simulated attack traffic demonstrates the system's ability to capture, analyze, and visualize network threats in real time. The proposed system provides a practical foundation for deployment in shared-access networks, small enterprises, and IoT-enabled environments.
 
 Keywords — Intrusion Detection System, Flow-Based Analysis, Machine Learning, Network Security, Real-Time Monitoring
 
@@ -2323,7 +2323,7 @@ Recent studies emphasize the effectiveness of flow-based intrusion detection, wh
 
 Despite advances in detection models, many existing IDS studies focus primarily on offline datasets and lack full system integration, limiting their applicability in operational networks [4], [10]. Real-world deployment requires not only accurate models but also live traffic capture, scalable inference, centralized logging, and actionable security management interfaces. Furthermore, public-access networks such as pisonet or shared Wi-Fi services demand IDS solutions capable of identifying malicious client devices while preserving normal user traffic. Recent studies have demonstrated the feasibility of anomaly detection and traffic pattern analysis in real-world Pisonet environments using dynamic time warping and seasonal decomposition techniques [25], [26].
 
-To address these challenges, this study presents the development and implementation of a real-time flow-based Intrusion Detection and Security Management System (IDSMS). The proposed system integrates live network traffic capture, flow-level feature extraction, machine learning-based attack classification, and a web-based security management platform. The system is designed to operate with a MikroTik gateway and downstream routers, enabling visibility into client-generated traffic while supporting real-time detection and response.
+To address these challenges, this study presents the development and implementation of a real-time flow-based Intrusion Detection and Security Management System (IDMS). The proposed system integrates live network traffic capture, flow-level feature extraction, machine learning-based attack classification, and a web-based security management platform. The system is designed to operate with a MikroTik gateway and downstream routers, enabling visibility into client-generated traffic while supporting real-time detection and response.
 
 Unlike dataset-only approaches, this work emphasizes end-to-end system development, demonstrating how flow-based IDS concepts can be operationalized into a working security platform. The system architecture supports live monitoring, historical analysis, and threat management, providing a practical foundation for deployment in small enterprise networks, IoT environments, and public internet access services.
 
@@ -2415,13 +2415,13 @@ Several studies have focused on improving IDS reliability through techniques lik
 
 5.6 Research Gap Addressed by This Study
 
-While extensive research exists on flow-based IDS models and algorithms, few studies address comprehensive system integration and operational deployment. Most existing work focuses on offline evaluation using datasets, with limited emphasis on end-to-end system implementation. This study addresses this gap by developing a complete Intrusion Detection and Security Management System (IDSMS) that integrates live traffic capture, machine learning inference, centralized storage, and web-based management interfaces.
+While extensive research exists on flow-based IDS models and algorithms, few studies address comprehensive system integration and operational deployment. Most existing work focuses on offline evaluation using datasets, with limited emphasis on end-to-end system implementation. This study addresses this gap by developing a complete Intrusion Detection and Security Management System (IDMS) that integrates live traffic capture, machine learning inference, centralized storage, and web-based management interfaces.
 
 6. METHODOLOGY
 
 6.1 System Architecture Overview
 
-The proposed IDSMS follows a modular architecture with five primary components: (1) live traffic capture from client devices through router and MikroTik gateway infrastructure, (2) flow aggregation and feature extraction by a dedicated monitoring node, (3) machine learning-based intrusion analysis through an inference service, (4) centralized data storage in a relational database, and (5) web-based visualization and threat management via an interactive dashboard. The system operates within a gateway-based network environment where client traffic passes through routers and a MikroTik gateway, with a dedicated monitoring node performing passive traffic observation and feature extraction before analysis results are stored and visualized.
+The proposed IDMS follows a modular architecture with five primary components: (1) live traffic capture from client devices through router and MikroTik gateway infrastructure, (2) flow aggregation and feature extraction by a dedicated monitoring node, (3) machine learning-based intrusion analysis through an inference service, (4) centralized data storage in a relational database, and (5) web-based visualization and threat management via an interactive dashboard. The system operates within a gateway-based network environment where client traffic passes through routers and a MikroTik gateway, with a dedicated monitoring node performing passive traffic observation and feature extraction before analysis results are stored and visualized.
 
 Figure 1. Overall System Architecture Diagram
 
@@ -2435,7 +2435,7 @@ Figure 2. Flow Capture and Feature Extraction Pipeline
 
 For each completed flow, the system extracts approximately 78 statistical features capturing temporal, volumetric, and directional characteristics. These include flow duration, packet counts, byte rates, inter-arrival times, and forward-backward packet statistics. Following feature extraction, the data undergoes JSON formatting to create structured API payloads. These formatted feature vectors are transmitted to the ML inference API, which performs real-time classification and returns prediction results (including risk level, attack probability, and classification labels). All results are then stored in the centralized database and made available for visualization through the web dashboard. Feature normalization is applied to ensure compatibility with machine learning models, and filtering removes incomplete or insignificant traffic. This complete runtime processing pipeline from packet aggregation through database storage to dashboard visualization is shown in Figure 3.
 
-Figure 3. Runtime Data Processing Pipeline of the Proposed IDSMS
+Figure 3. Runtime Data Processing Pipeline of the Proposed IDMS
 
 6.4 Machine Learning Model Design and Training
 
@@ -2459,7 +2459,7 @@ Extracted flow features are transmitted to a remote inference service via secure
 
 A centralized relational database implements the storage layer with a normalized schema consisting of five primary tables: Flows (flow metadata), Features (extracted attributes), Users (access control), Predictions (classification outputs), and Attacks (threat records). This structure ensures comprehensive logging of all processed traffic while supporting efficient queries for both real-time monitoring and historical forensic analysis, as detailed in Figure 4.
 
-Figure 4. Database Schema of the Proposed IDSMS
+Figure 4. Database Schema of the Proposed IDMS
 
 6.7 Web-Based Security Management Interface
 
@@ -2481,9 +2481,9 @@ During testing, the flow sniffer successfully captured live traffic and aggregat
 
 7.2 Real-Time Monitoring Performance
 
-Figure 7 illustrates the Live Monitor interface of the IDSMS, which provides immediate visibility into network activity through real-time metrics and graphical displays. The dashboard shows live statistics such as incoming flows (38), packets per second (31), and alerts per second (0), alongside a time-series graph depicting flow rate variations over a monitoring period. This real-time visualization confirms the system’s capability to process and display traffic fluctuations instantly, a critical feature for environments requiring continuous situational awareness and prompt threat response.
+Figure 7 illustrates the Live Monitor interface of the IDMS, which provides immediate visibility into network activity through real-time metrics and graphical displays. The dashboard shows live statistics such as incoming flows (38), packets per second (31), and alerts per second (0), alongside a time-series graph depicting flow rate variations over a monitoring period. This real-time visualization confirms the system’s capability to process and display traffic fluctuations instantly, a critical feature for environments requiring continuous situational awareness and prompt threat response.
 
-Figure 7. Real-time monitoring interface of the proposed IDSMS showing live flow rate and packet activity
+Figure 7. Real-time monitoring interface of the proposed IDMS showing live flow rate and packet activity
 
 7.3 Feature Generation Consistency
 
@@ -2507,13 +2507,13 @@ All analyzed flows and predictions were successfully stored in the centralized d
 
 7.7 Dashboard Visualization Effectiveness
 
-Figures 8 illustrate the dashboard’s comprehensive visualization capabilities, which include real-time attack summaries (118 malicious flows detected), traffic overview graphs, and detailed breakdowns of attack types and risk distributions. The interface successfully reflected simulated attack patterns showing spikes in threat activity and updating attack rate metrics dynamically thereby validating the end-to-end synchronization of the IDSMS pipeline.
+Figures 8 illustrate the dashboard’s comprehensive visualization capabilities, which include real-time attack summaries (118 malicious flows detected), traffic overview graphs, and detailed breakdowns of attack types and risk distributions. The interface successfully reflected simulated attack patterns showing spikes in threat activity and updating attack rate metrics dynamically thereby validating the end-to-end synchronization of the IDMS pipeline.
 
 Figure 8. Dashboard Screenshot (Overview Page)
 
-The Threat Reports module, shown in Figure 10, demonstrated real-time synchronization across the IDSMS by displaying live summary metrics—including 118 detected attacks out of 5,214 total events—and populating a detailed event log table with timestamped flow records, source and destination IPs, risk classifications, probability scores, and traffic statistics as soon as simulated attacks were processed. This immediate update of both numerical counters and forensic data validated the system’s end-to-end operational pipeline, confirming that packet capture, feature extraction, machine learning inference, database storage, and dashboard visualization were seamlessly integrated with negligible latency, thereby proving the system’s readiness for real-world security monitoring where timely threat awareness is essential.
+The Threat Reports module, shown in Figure 10, demonstrated real-time synchronization across the IDMS by displaying live summary metrics—including 118 detected attacks out of 5,214 total events—and populating a detailed event log table with timestamped flow records, source and destination IPs, risk classifications, probability scores, and traffic statistics as soon as simulated attacks were processed. This immediate update of both numerical counters and forensic data validated the system’s end-to-end operational pipeline, confirming that packet capture, feature extraction, machine learning inference, database storage, and dashboard visualization were seamlessly integrated with negligible latency, thereby proving the system’s readiness for real-world security monitoring where timely threat awareness is essential.
 
-Figure 9. Threat Reports module of the IDSMS showing summarized statistics and per-flow event records.
+Figure 9. Threat Reports module of the IDMS showing summarized statistics and per-flow event records.
 
 Figure 10 presents a tabular view of specific attack instances detected during testing, displayed within the Manage Threats interface. The table includes detailed forensic records such as timestamps, source and destination IP addresses, protocol identifiers, attack types (Portscan, Brute Force, FTP Patator, DNS Amplification, DDoS), risk levels, status indicators, and actionable block options. This structured presentation of live threat data validates the system’s classification accuracy and provides security analysts with immediate, actionable forensic details for incident investigation and response.
 
@@ -2531,7 +2531,7 @@ The evaluation is limited to development-scale testing with simulated attacks an
 
 8.1 Summary of Findings
 
-This study successfully designed, developed, and evaluated a real-time flow-based Intrusion Detection and Security Management System (IDSMS). The system integrates live network traffic monitoring, machine learning-based intrusion analysis, centralized data storage, and web-based visualization into a cohesive security platform. Key achievements include:
+This study successfully designed, developed, and evaluated a real-time flow-based Intrusion Detection and Security Management System (IDMS). The system integrates live network traffic monitoring, machine learning-based intrusion analysis, centralized data storage, and web-based visualization into a cohesive security platform. Key achievements include:
 
 Successful implementation of a modular architecture separating traffic acquisition, analysis, storage, and visualization components
 
@@ -2583,7 +2583,7 @@ Extended Network Environments: Adaptation for cloud-based, SDN, and 5G network i
 
 8.5 Final Remarks
 
-The developed IDSMS provides a practical foundation for intrusion detection in resource-constrained environments, particularly relevant for educational institutions and small enterprises in developing economies. By bridging the gap between theoretical models and operational systems, this research contributes to more accessible and implementable cybersecurity solutions. The modular design ensures adaptability to evolving network threats and technologies, supporting long-term security management needs.
+The developed IDMS provides a practical foundation for intrusion detection in resource-constrained environments, particularly relevant for educational institutions and small enterprises in developing economies. By bridging the gap between theoretical models and operational systems, this research contributes to more accessible and implementable cybersecurity solutions. The modular design ensures adaptability to evolving network threats and technologies, supporting long-term security management needs.
 
 REFERENCES
 
@@ -3961,21 +3961,21 @@ resources/js/app.js. 22 bytes. Frontend source asset consumed by the Vite build.
 
 resources/js/bootstrap.js. 127 bytes. Frontend source asset consumed by the Vite build.
 
-resources/views/admin/dashboard.blade.php. 58,422 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
+resources/views/admin/dashboard.blade.php. 58,418 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
 
-resources/views/admin/live-monitor.blade.php. 13,841 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
+resources/views/admin/live-monitor.blade.php. 13,840 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
 
-resources/views/admin/logs.blade.php. 18,158 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
+resources/views/admin/logs.blade.php. 18,154 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
 
-resources/views/admin/manage-threats.blade.php. 31,611 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
+resources/views/admin/manage-threats.blade.php. 31,607 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
 
 resources/views/admin/partials/system-status-alert.blade.php. 909 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
 
-resources/views/admin/system-status.blade.php. 31,934 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
+resources/views/admin/system-status.blade.php. 31,930 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
 
-resources/views/admin/threat-reports.blade.php. 12,657 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
+resources/views/admin/threat-reports.blade.php. 12,656 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
 
-resources/views/welcome.blade.php. 44,476 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
+resources/views/welcome.blade.php. 44,470 bytes. Server-rendered Blade website page or partial; page responsibilities are explained in the website chapter.
 
 
 File inventory: routes
@@ -4157,7 +4157,7 @@ tests/Unit/ExampleTest.php. 81 bytes. Regression test source or shared test harn
 File inventory: tools
 
 
-tools/build_system_documentation.py. 115,836 bytes. Offline text/PDF documentation generator; not part of website request handling.
+tools/build_system_documentation.py. 116,127 bytes. Offline text/PDF documentation generator; not part of website request handling.
 
 
 Grouped private, dependency, and generated directories

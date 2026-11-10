@@ -72,7 +72,7 @@
               <span class="app-brand-logo demo">
                 <img src="{{ asset('images/logo.png') }}" alt="logo" width="60" height="50" />
               </span>
-              <span class="app-brand-text demo menu-text fw-bolder text-uppercase cooper-brand" style="color: rgb(88, 103, 143)">IDSMS</span>
+              <span class="app-brand-text demo menu-text fw-bolder text-uppercase cooper-brand" style="color: rgb(88, 103, 143)">IDMS</span>
             </a>
 
             <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
@@ -604,9 +604,9 @@
               <div class="row align-items-center">
                 <div class="col-md-4 text-center text-md-start mb-2 mb-md-0">
                   <div class="d-flex align-items-center gap-2 justify-content-center justify-content-md-start">
-                    <img src="{{ asset('images/logo.png') }}" alt="IDSMS" style="width:36px;height:36px;border-radius:6px;object-fit:cover" />
+                    <img src="{{ asset('images/logo.png') }}" alt="IDMS" style="width:36px;height:36px;border-radius:6px;object-fit:cover" />
                     <div>
-                      <div class="fw-bold">IDSMS</div>
+                      <div class="fw-bold">IDMS</div>
                       <small class="text-muted d-block">Intrusion Detection Monitoring</small>
                     </div>
                   </div>
@@ -620,7 +620,7 @@
                 </div>
                 <div class="col-md-4 text-center text-md-end">
                   <div class="d-flex align-items-center justify-content-center justify-content-md-end gap-3">
-                    <small class="text-muted">© <script>document.write(new Date().getFullYear());</script> IDSMS</small>
+                    <small class="text-muted">© <script>document.write(new Date().getFullYear());</script> IDMS</small>
                     <a href="#" class="btn btn-sm btn-outline-secondary">Contact</a>
                     <div class="d-none d-md-flex align-items-center gap-2">
                       <a href="#" class="text-muted"><i class="bx bxl-github fs-5"></i></a>
