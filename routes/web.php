@@ -46,6 +46,10 @@ Route::middleware('check.session')->group(function () {
         ->name('admin.threat-reports');
     Route::get('/threat-reports/export', [ThreatReportsController::class, 'export'])
         ->name('admin.threat-reports.export');
+    Route::get('/threat-reports/pdf', [ThreatReportsController::class, 'pdf'])
+        ->name('admin.threat-reports.pdf');
+    Route::post('/threat-reports/{log}/review', [ThreatReportsController::class, 'review'])
+        ->name('admin.threat-reports.review');
     Route::get('/threat-reports/data', [ThreatReportsController::class, 'data'])
         ->name('admin.threat-reports.data');
 

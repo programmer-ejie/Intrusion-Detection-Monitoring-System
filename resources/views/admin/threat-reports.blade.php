@@ -175,14 +175,23 @@
                     <div class="card-header d-flex align-items-center">
                       <h5 class="mb-0">Threat Reports</h5>
                       <div class="ms-auto">
-                        <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.threat-reports') }}?window=24h">Last 24h</a>
-                        <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.threat-reports') }}?window=7d">7 Days</a>
-                        <a class="btn btn-sm btn-outline-primary" href="{{ route('admin.threat-reports') }}?window=30d">30 Days</a>
-                        <a class="btn btn-sm btn-primary" href="{{ route('admin.threat-reports') }}?window=all">All</a>
+                        @foreach(['24h' => 'Last 24h', '7d' => '7 Days', '30d' => '30 Days', 'all' => 'All'] as $value => $label)
+                        <a class="btn btn-sm {{ $window === $value ? 'btn-primary' : 'btn-outline-primary' }}" href="{{ route('admin.threat-reports', array_merge(request()->only('client'), ['window' => $value])) }}">{{ $label }}</a>
+                        @endforeach
                         <a class="btn btn-sm btn-success" href="{{ route('admin.threat-reports.export', request()->query()) }}">Export CSV</a>
+                        <a class="btn btn-sm btn-primary" href="{{ route('admin.threat-reports.pdf', request()->except('page')) }}">Export PDF</a>
                       </div>
                     </div>
                     <div class="card-body">
+                      @if(session('success'))<div class="alert alert-success">{{ session('success') }}</div>@endif
+                      @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+                      <form method="get" class="d-flex flex-wrap gap-2 mb-4">
+                        <input type="hidden" name="window" value="{{ $window }}">
+                        <label for="report-client" class="align-self-center">Client / source IP</label>
+                        <input id="report-client" name="client" class="form-control" style="max-width:280px" maxlength="255" value="{{ request('client') }}" placeholder="Exact PPPoE name or source IP">
+                        <button class="btn btn-outline-primary">Filter</button>
+                        <a class="btn btn-outline-secondary" href="{{ route('admin.threat-reports', ['window' => $window]) }}">Clear client</a>
+                      </form>
                       <div class="row mb-4">
                         <div class="col-md-3 mb-2">
                           <div class="p-3 bg-light rounded">Total Events<br><strong>{{ $total ?? 0 }}</strong></div>
@@ -198,33 +207,69 @@
                         </div>
                       </div>
 
+                      <details class="mb-4" open>
+                        <summary class="fw-semibold mb-3">Client charts and reviewed outcomes</summary>
+                        @include('admin.reports.charts')
+                        <details class="mt-3"><summary>All flagged clients ({{ $clients->count() }})</summary>
+                          <div class="table-responsive"><table class="table table-sm"><thead><tr><th>Client</th><th>Events</th><th>Predicted attacks</th><th>False positives</th><th>False negatives</th><th>Report</th></tr></thead><tbody>
+                          @forelse($clients as $client)
+                            <tr><td>{{ $client->client }}</td><td>{{ $client->events }}</td><td>{{ $client->attempts }}</td><td>{{ $client->fp }}</td><td>{{ $client->fn }}</td><td><a href="{{ route('admin.threat-reports.pdf', ['window' => $window, 'client' => $client->client]) }}">Client PDF</a></td></tr>
+                          @empty<tr><td colspan="6">No flagged clients.</td></tr>@endforelse
+                          </tbody></table></div>
+                        </details>
+                        <p class="text-muted mt-3">Review events below to confirm actual attacks or benign activity. A resolved or blocked status does not establish a false positive or false negative.</p>
+                      </details>
                       <div class="table-responsive">
                         <table class="table table-striped">
                           <thead>
                             <tr>
                               <th>Timestamp</th>
+                              <th>Client</th>
                               <th>Src IP</th>
                               <th>Dst IP</th>
                               <th>Risk</th>
                               <th>Prob</th>
                               <th>Pkts</th>
-                              <th>Bytes</th>
+                              <th>Bytes/s</th>
+                              <th>Review / Evidence</th>
                             </tr>
                           </thead>
                           <tbody id="reports-tbody">
                             @forelse($rows as $r)
                             <tr>
                               <td>{{ $r->created_at }}</td>
+                              <td>{{ $r->pppoe_name ?: $r->src_ip }}</td>
                               <td>{{ $r->src_ip }}</td>
                               <td>{{ $r->dst_ip ?? $r->dst }}</td>
                               <td>{{ $r->risk_level }}</td>
                               <td>{{ $r->prob_attack }}</td>
                               <td>{{ $r->tot_fwd_pkts }}</td>
                               <td>{{ $r->flow_bytes_s }}</td>
+                              <td style="min-width:260px">
+                                <strong>{{ \App\Services\ThreatReportService::outcome($r) }}</strong>
+                                @if($r->review_notes)<p class="small mb-1">{{ $r->review_notes }}</p>@endif
+                                @if($r->reviewed_at)<small>Reviewer #{{ $r->reviewed_by }} · {{ $r->reviewed_at }}</small>@endif
+                                @if(session('user')?->canManageThreats())
+                                <details><summary class="text-primary">Review event #{{ $r->id }}</summary>
+                                  <form method="post" action="{{ route('admin.threat-reports.review', $r->id) }}" class="mt-2">
+                                    @csrf
+                                    <label for="label-{{ $r->id }}" class="small">Actual activity</label>
+                                    <select id="label-{{ $r->id }}" name="actual_label" class="form-select form-select-sm mb-2" required>
+                                      <option value="">Select verified outcome</option>
+                                      <option value="attack" @selected($r->actual_label === 'attack')>Actual attack</option>
+                                      <option value="benign" @selected($r->actual_label === 'benign')>Actually benign</option>
+                                    </select>
+                                    <label for="notes-{{ $r->id }}" class="small">Evidence / reason</label>
+                                    <textarea id="notes-{{ $r->id }}" name="review_notes" class="form-control mb-2" rows="2" minlength="5" maxlength="2000" required>{{ $r->review_notes }}</textarea>
+                                    <button class="btn btn-sm btn-primary">Save review</button>
+                                  </form>
+                                </details>
+                                @endif
+                              </td>
                             </tr>
                             @empty
                             <tr>
-                              <td colspan="7" class="text-center text-muted">No reports found</td>
+                              <td colspan="9" class="text-center text-muted">No reports found</td>
                             </tr>
                             @endforelse
                           </tbody>

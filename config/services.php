@@ -2,6 +2,10 @@
 
 return [
 
+    'ids' => [
+        'analyze_url' => env('IDS_ANALYZE_URL', 'https://ids-ensemble-api.onrender.com/api/analyze'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

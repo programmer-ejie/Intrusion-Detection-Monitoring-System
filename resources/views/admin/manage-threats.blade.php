@@ -270,6 +270,18 @@
               </div>
               @endif
 
+              @if($errors->any())
+              <div class="alert alert-danger" role="alert">{{ $errors->first() }}</div>
+              @endif
+              @if($prediction = session('demo_prediction'))
+              <div class="alert alert-info" role="status">
+                <strong>Render prediction: {{ $prediction['result']['attack_type'] ?? 'Benign' }}</strong>
+                <div>Selected sample: {{ $prediction['selected_attack'] }} | Risk: {{ $prediction['result']['risk_level'] }} | Attack probability: {{ number_format($prediction['result']['prob_attack'] * 100, 2) }}%</div>
+                <div>Subscriber: pppoe-{{ $prediction['payload']['pppoe_name'] }} | {{ $prediction['payload']['src_ip'] }} to {{ $prediction['payload']['dst_ip'] }}</div>
+                <details class="mt-2"><summary>Submitted flow and prediction</summary><pre class="mt-2 mb-0" style="max-height: 300px; overflow: auto">{{ json_encode($prediction, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre></details>
+              </div>
+              @endif
+
               <div class="card">
                 <div class="card-body">
                   <form id="threats-filter-form" method="GET" action="{{ route('admin.manage-threats') }}" class="threats-toolbar">
@@ -292,7 +304,7 @@
                       @if(session("user")?->canManageThreats())
                       <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#seedDemoModal">
                         <i class="bx bx-bug me-1"></i>
-                        Seed Demo Threats
+                        Inject Demo Attack
                       </button>
                       @endif
                     </div>
@@ -310,11 +322,14 @@
                         <th>PPPoE User</th>
                         @endif
                         <th>Dst IP</th>
-                        <th>Flow Protocol</th>
+                        <th class="text-center">Flow Protocol</th>
                         <th>Type</th>
                         <th>Events</th>
                         <th>Risk Level</th>
-                        <th>Status</th>
+                        <th class="text-center" title="Attack probability from the latest detection in this incident. Measured accuracy requires verified ground-truth labels.">
+                          Attack Probability
+                        </th>
+                        <th class="text-center">Status</th>
                         @if($hasNotes)
                         <th>Notes</th>
                         @endif
@@ -383,13 +398,20 @@
                         <td><strong>{!! $pppoeName !!}</strong></td>
                         @endif
                         <td>{!! $dstIp !!}</td>
-                        <td>{!! $protocol !!}</td>
+                        <td class="text-center">{!! $protocol !!}</td>
                         <td class="text-danger">{{ $displayType ?: 'No Value' }}</td>
                         <td>{{ $threat->event_count ?? 1 }}</td>
                         <td>
                           <span class="badge {{ $riskLevelClass }}">{{ $riskLevelText }}</span>
                         </td>
-                        <td>
+                        <td class="text-center text-nowrap" title="Model-estimated attack probability for the latest detection; not measured accuracy or attack-type confidence.">
+                          @if(is_numeric($threat->prob_attack) && is_finite((float) $threat->prob_attack) && $threat->prob_attack >= 0 && $threat->prob_attack <= 1)
+                            {{ number_format((float) $threat->prob_attack * 100, 2) }}%
+                          @else
+                            <span class="no-value-pill">No Value</span>
+                          @endif
+                        </td>
+                        <td class="text-center">
                           <span class="status-badge {{ $statusBadgeClass }}">{{ $statusText }}</span>
                         </td>
                         @if($hasNotes)
@@ -478,7 +500,7 @@
                       </tr>
                       @empty
                       <tr>
-                        <td colspan="{{ 9 + (session("user")?->canManageThreats() ? 1 : 0) + ($hasNotes ? 1 : 0) + ($hasPppoeName ? 1 : 0) }}" class="text-center text-muted">No threats found</td>
+                        <td colspan="{{ 10 + (session("user")?->canManageThreats() ? 1 : 0) + ($hasNotes ? 1 : 0) + ($hasPppoeName ? 1 : 0) }}" class="text-center text-muted">No threats found</td>
                       </tr>
                       @endforelse
                     </tbody>
@@ -495,51 +517,69 @@
               <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
                   <div class="modal-header">
-                    <h5 class="modal-title" id="seedDemoModalLabel">Seed Demo Threats</h5>
+                    <h5 class="modal-title" id="seedDemoModalLabel">Inject Demo Attack</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                   </div>
-                  <form method="POST" action="{{ route('admin.threat.demo') }}">
+                  <form id="demo-injection-form" method="POST" action="{{ route('admin.threat.demo') }}">
                     @csrf
                     <div class="modal-body text-start">
-                      <p class="text-muted mb-4">
-                        The PPPoE username is the stable blocking identity. Edit only the destination IP before seeding.
-                      </p>
-
-                      @php
-                        $demoSeedTargets = $demoSeedTargets ?? [];
-                      @endphp
-
-                      @foreach($demoSeedTargets as $target)
-                        <div class="border rounded-3 p-3 mb-3 bg-light">
-                          <div class="row g-3 align-items-end">
-                            <div class="col-md-4">
-                              <label class="form-label">PPPoE Name</label>
-                              <input type="text" class="form-control" value="{{ $target['name'] }}" disabled />
-                            </div>
-                            <div class="col-md-3">
-                              <label class="form-label">Source IP</label>
-                              <input type="text" class="form-control" value="{{ $target['src_ip'] }}" disabled />
-                            </div>
-                            <div class="col-md-5">
-                              <label class="form-label">Destination IP</label>
-                              <input
-                                type="text"
-                                name="{{ $target['pppoe_name'] === 'jimson' ? 'dst_ip_jimson' : 'dst_ip_jimson2' }}"
-                                class="form-control"
-                                value="{{ old($target['pppoe_name'] === 'jimson' ? 'dst_ip_jimson' : 'dst_ip_jimson2', $target['dst_ip']) }}"
-                                placeholder="10.0.70.9"
-                                required
-                              />
-                            </div>
+                      <p class="text-muted">Choose a subscriber and attack sample. The flow values below are sent to Render for prediction.</p>
+                      <div class="row g-3">
+                        <div class="col-md-6">
+                          <label class="form-label" for="demo-pppoe">PPPoE Name</label>
+                          <select id="demo-pppoe" name="pppoe_name" class="form-select" required>
+                            @foreach(($demoSeedTargets ?? []) as $target)
+                            <option value="{{ $target['pppoe_name'] }}" data-source="{{ $target['src_ip'] }}" data-destination="{{ $target['dst_ip'] }}" @selected(old('pppoe_name') === $target['pppoe_name'])>{{ $target['name'] }}</option>
+                            @endforeach
+                          </select>
+                        </div>
+                        <div class="col-md-6">
+                          <label class="form-label" for="demo-attack">Attack Type</label>
+                          <select id="demo-attack" name="attack_type" class="form-select" required>
+                            @foreach(($demoAttackCatalog ?? []) as $attack => $samples)
+                            <option value="{{ $attack }}" @selected(old('attack_type') === $attack)>{{ $attack }}</option>
+                            @endforeach
+                          </select>
+                        </div>
+                        <div class="col-12">
+                          <label class="form-label" for="demo-sample">Flow Sample</label>
+                          <select id="demo-sample" name="sample_index" class="form-select" required></select>
+                          <small class="text-muted">A different sample is selected for the next injection. The model may return a different attack or benign.</small>
+                        </div>
+                      </div>
+                      <details class="mt-3">
+                        <summary>View model input values</summary>
+                        <p class="text-muted small mt-2">Demo metadata: these addresses describe the sample flow. The PPPoE name identifies the subscriber.</p>
+                        <div class="row g-3">
+                          <div class="col-md-6">
+                            <label class="form-label" for="demo-source">Demo Source IP</label>
+                            <input id="demo-source" class="form-control" readonly />
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label" for="demo-destination">Demo Destination IP</label>
+                            <input id="demo-destination" name="dst_ip" class="form-control" value="{{ old('dst_ip') }}" readonly />
                           </div>
                         </div>
-                      @endforeach
+                        <div class="table-responsive mt-2" style="max-height: 260px">
+                          <table class="table table-sm"><thead><tr><th>Feature</th><th>Value</th></tr></thead><tbody id="demo-feature-values"></tbody></table>
+                        </div>
+                      </details>
+                      <div id="demo-progress" class="alert alert-info mt-3 mb-0" role="status" aria-live="polite" hidden>
+                        <div class="d-flex align-items-center gap-3">
+                          <span class="spinner-border flex-shrink-0" aria-hidden="true"></span>
+                          <div>
+                            <strong>Analyzing your demo flow...</strong>
+                            <div id="demo-progress-message">Render may need time to wake up. This can take a few minutes. Keep this page open.</div>
+                            <div class="small mt-1">Elapsed: <span id="demo-elapsed" aria-live="off">0:00</span> | Waiting up to 3 minutes for Render.</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <div class="modal-footer">
                       <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
                       <button type="submit" class="btn btn-danger">
                         <i class="bx bx-bug me-1"></i>
-                        Seed Demo Threats
+                        Inject Demo Attack
                       </button>
                     </div>
                   </form>
@@ -547,6 +587,82 @@
               </div>
             </div>
 
+            <script>
+              document.addEventListener('DOMContentLoaded', function () {
+                const catalog = @json($demoAttackCatalog ?? []);
+                const previous = @json(session('demo_last_samples', []));
+                const subscriber = document.getElementById('demo-pppoe');
+                const destination = document.getElementById('demo-destination');
+                const attack = document.getElementById('demo-attack');
+                const sample = document.getElementById('demo-sample');
+                function updateSubscriber(resetDestination) {
+                  const option = subscriber.selectedOptions[0];
+                  document.getElementById('demo-source').value = option?.dataset.source || '';
+                  if (resetDestination || !destination.value) destination.value = option?.dataset.destination || '';
+                }
+                function preview() {
+                  const body = document.getElementById('demo-feature-values');
+                  body.replaceChildren();
+                  Object.entries(catalog[attack.value]?.[sample.value] || {}).forEach(([name, value]) => {
+                    const row = document.createElement('tr');
+                    [name, value].forEach(text => { const cell = document.createElement('td'); cell.textContent = text; row.appendChild(cell); });
+                    body.appendChild(row);
+                  });
+                }
+                function updateAttack() {
+                  sample.replaceChildren();
+                  const samples = catalog[attack.value] || [];
+                  samples.forEach((flow, index) => sample.add(new Option('Sample ' + (index + 1) + ' - destination port ' + flow.destination_port, index)));
+                  const candidates = samples.map((_, i) => i).filter(i => i !== previous[attack.value]);
+                  if (candidates.length) sample.value = candidates[Math.floor(Math.random() * candidates.length)];
+                  preview();
+                }
+                subscriber.addEventListener('change', () => updateSubscriber(true));
+                attack.addEventListener('change', updateAttack);
+                sample.addEventListener('change', preview);
+                updateSubscriber(false);
+                updateAttack();
+                const form = document.getElementById('demo-injection-form');
+                const modal = document.getElementById('seedDemoModal');
+                let submitting = false;
+                let elapsedTimer;
+                const submitButton = form.querySelector('button[type="submit"]');
+                const originalButton = submitButton.innerHTML;
+                function resetLoading() {
+                  submitting = false;
+                  clearInterval(elapsedTimer);
+                  form.removeAttribute('aria-busy');
+                  submitButton.disabled = false;
+                  submitButton.innerHTML = originalButton;
+                  modal.querySelectorAll('[data-bs-dismiss="modal"]').forEach(button => button.disabled = false);
+                  form.querySelectorAll('select').forEach(select => select.style.pointerEvents = '');
+                  document.getElementById('demo-progress').hidden = true;
+                }
+                modal.addEventListener('hide.bs.modal', event => {
+                  if (submitting) event.preventDefault();
+                });
+                form.addEventListener('submit', function (event) {
+                  if (submitting) { event.preventDefault(); return; }
+                  submitting = true;
+                  form.setAttribute('aria-busy', 'true');
+                  submitButton.disabled = true;
+                  submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Analyzing...';
+                  modal.querySelectorAll('[data-bs-dismiss="modal"]').forEach(button => button.disabled = true);
+                  // Keep selects enabled so their values are included in the POST.
+                  form.querySelectorAll('select').forEach(select => select.style.pointerEvents = 'none');
+                  document.getElementById('demo-progress').hidden = false;
+                  const started = Date.now();
+                  document.getElementById('demo-elapsed').textContent = '0:00';
+                  elapsedTimer = setInterval(() => {
+                    const seconds = Math.floor((Date.now() - started) / 1000);
+                    document.getElementById('demo-elapsed').textContent = Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+                    if (seconds >= 60) document.getElementById('demo-progress-message').textContent = 'Still waiting for Render to return a prediction. Please keep this page open and avoid submitting again.';
+                  }, 1000);
+                });
+                // Restore controls when returning through the browser's back cache.
+                window.addEventListener('pageshow', resetLoading);
+              });
+            </script>
             @endif
             <div class="content-backdrop fade"></div>
           </div>
@@ -571,7 +687,7 @@
                 </div>
                 <div class="col-md-4 text-center text-md-end">
                   <div class="d-flex align-items-center justify-content-center justify-content-md-end gap-3">
-                    <small class="text-muted">© <script>document.write(new Date().getFullYear());</script> IDMS</small>
+                    <small class="text-muted"><script>document.write(new Date().getFullYear());</script> IDMS</small>
                     <a href="#" class="btn btn-sm btn-outline-secondary">Contact</a>
                     <div class="d-none d-md-flex align-items-center gap-2">
                       <a href="#" class="text-muted"><i class="bx bxl-github fs-5"></i></a>

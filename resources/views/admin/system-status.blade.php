@@ -620,7 +620,7 @@
                 </div>
                 <div class="col-md-4 text-center text-md-end">
                   <div class="d-flex align-items-center justify-content-center justify-content-md-end gap-3">
-                    <small class="text-muted">© <script>document.write(new Date().getFullYear());</script> IDMS</small>
+                    <small class="text-muted"><script>document.write(new Date().getFullYear());</script> IDMS</small>
                     <a href="#" class="btn btn-sm btn-outline-secondary">Contact</a>
                     <div class="d-none d-md-flex align-items-center gap-2">
                       <a href="#" class="text-muted"><i class="bx bxl-github fs-5"></i></a>
